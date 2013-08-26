@@ -1,6 +1,6 @@
 == jtag - Autotagging for Jekyll
 
-v0.1.1
+v0.1.2
 
 === Global Options
 === -d|--debug debug_level
@@ -35,6 +35,15 @@ Display the program version
 Add tags to post
 
 
+===== Options
+===== -f|--format output_format
+
+Format to use when outputting tags to console: list, csv or yaml
+
+[Default Value] yaml
+[Must Match] (?-mix:^(csv|list|yaml)$)
+
+
 ==== Command: <tt>blacklist  tag [tag2...]</tt>
 Blacklist a specific tag
 
@@ -56,9 +65,23 @@ Reset all configuration files to default values
 
 
 ==== Command: <tt>find  keyword[, keyword]*</tt>
-List tags, optionally filter for keyword
+List tags, optionally filter for keywords/regular expressions (OR)
 
 This command can be used to find the exact format for a given tag to keep spaces, underscores, capitalization and pluralization consistent
+===== Options
+===== -f|--format output_format
+
+Format to use when outputting tags to console: list, csv or yaml. Defaults to yaml.
+
+[Default Value] yaml
+[Must Match] (?-mix:^(csv|list|yaml)$)
+
+
+===== -c|--[no-]counts
+Include tag counts
+
+
+
 ==== Command: <tt>help  command</tt>
 Shows a list of commands or help for one command
 
@@ -73,19 +96,64 @@ List commands one per line, to assist with shell completion
 Merge multiple tags into one
 
 Scans the specified posts for any of the tags, merging any found into the last one in the list
+===== Options
+===== -f|--format output_format
+
+Format to use when outputting tags to console: list, csv or yaml
+
+[Default Value] yaml
+[Must Match] (?-mix:^(csv|list|yaml)$)
+
+
 ==== Command: <tt>remove  tags to remove from_post_file_or_pattern</tt>
 Remove tags from a post
+
+
+===== Options
+===== -f|--format output_format
+
+Format to use when outputting tags to console: list, csv or yaml
+
+[Default Value] yaml
+[Must Match] (?-mix:^(csv|list|yaml)$)
 
 
 ==== Command: <tt>sort  filenames[, filenames]*</tt>
 Sort the existing tags for posts
 
 
-==== Command: <tt>tag  filename</tt>
+===== Options
+===== -f|--format output_format
+
+Format to use when outputting tags to console: list, csv or yaml
+
+[Default Value] yaml
+[Must Match] (?-mix:^(csv|list|yaml)$)
+
+
+==== Command: <tt>tag  filename[, filename]*</tt>
 Generate a list of recommended tags, optionally updating the file
+
+
+===== Options
+===== -f|--format output_format
+
+Format to use when outputting tags to console: list, csv or yaml
+
+[Default Value] yaml
+[Must Match] (?-mix:^(csv|list|yaml)$)
 
 
 ==== Command: <tt>tags  filenames[, filenames]*</tt>
 Show the current tags for posts
+
+
+===== Options
+===== -f|--format output_format
+
+Format to use when outputting tags to console: list, csv or yaml
+
+[Default Value] yaml
+[Must Match] (?-mix:^(csv|list|yaml)$)
 
 

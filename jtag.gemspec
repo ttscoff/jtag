@@ -17,7 +17,6 @@ lib/jtag/config_files/config.yml
 lib/jtag/config_files/stopwords.txt
 lib/jtag/config_files/synonyms.yml
 lib/jtag/porter_stemming.rb
-lib/jtag/stupid_json.rb
 lib/jtag/jekylltag.rb
 lib/jtag/string.rb
 lib/jtag.rb
@@ -32,4 +31,5 @@ lib/jtag.rb
   s.add_development_dependency('rdoc')
   s.add_development_dependency('aruba')
   s.add_runtime_dependency('gli','2.7.0')
+  s.add_runtime_dependency('json')
 end
