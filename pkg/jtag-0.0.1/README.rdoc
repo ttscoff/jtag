@@ -1,6 +1,0 @@
-= jtag
-
-Describe your project here
-
-:include:jtag.rdoc
-

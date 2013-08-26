@@ -24,8 +24,8 @@ lib/jtag.rb
   )
   s.require_paths << 'lib'
   s.has_rdoc = false
-  # s.extra_rdoc_files = ['README.rdoc','jtag.rdoc']
-  # s.rdoc_options << '--title' << 'jtag' << '--main' << 'README.rdoc' << '-ri'
+  s.extra_rdoc_files = ['README.rdoc','jtag.rdoc']
+  s.rdoc_options << '--title' << 'jtag' << '--main' << 'README.rdoc' << '-ri'
   s.bindir = 'bin'
   s.executables << 'jtag'
   s.add_development_dependency('rake')

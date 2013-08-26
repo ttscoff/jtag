@@ -1,5 +1,91 @@
-= jtag
+== jtag - Autotagging for Jekyll
 
-Generate this with
-    jtag rdoc
-After you have described your command line interface
+v0.1.1
+
+=== Global Options
+=== -d|--debug debug_level
+
+Debug level
+
+[Default Value] 0
+
+
+=== --help
+Show this message
+
+
+
+=== -s|--[no-]silent
+Run silently
+
+
+
+=== -t|--[no-]test
+Test (Dry run, don't update files)
+
+Run all commands and show results on the command line, but don't overwrite/update any files
+
+=== --version
+Display the program version
+
+
+
+=== Commands
+==== Command: <tt>add  tags to add from_post_file_or_pattern</tt>
+Add tags to post
+
+
+==== Command: <tt>blacklist  tag [tag2...]</tt>
+Blacklist a specific tag
+
+
+===== Options
+===== -r|--[no-]remove
+Remove (unblacklist) the arguments
+
+
+
+==== Command: <tt>config </tt>
+Update and notify user of configuration files location
+
+
+===== Options
+===== -r|--[no-]reset
+Reset all configuration files to default values
+
+
+
+==== Command: <tt>find  keyword[, keyword]*</tt>
+List tags, optionally filter for keyword
+
+This command can be used to find the exact format for a given tag to keep spaces, underscores, capitalization and pluralization consistent
+==== Command: <tt>help  command</tt>
+Shows a list of commands or help for one command
+
+Gets help for the application or its commands. Can also list the commands in a way helpful to creating a bash-style completion function
+===== Options
+===== -c
+List commands one per line, to assist with shell completion
+
+
+
+==== Command: <tt>merge  tags to merge merge_tag</tt>
+Merge multiple tags into one
+
+Scans the specified posts for any of the tags, merging any found into the last one in the list
+==== Command: <tt>remove  tags to remove from_post_file_or_pattern</tt>
+Remove tags from a post
+
+
+==== Command: <tt>sort  filenames[, filenames]*</tt>
+Sort the existing tags for posts
+
+
+==== Command: <tt>tag  filename</tt>
+Generate a list of recommended tags, optionally updating the file
+
+
+==== Command: <tt>tags  filenames[, filenames]*</tt>
+Show the current tags for posts
+
+

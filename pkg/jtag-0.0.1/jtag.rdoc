@@ -1,5 +1,0 @@
-= jtag
-
-Generate this with
-    jtag rdoc
-After you have described your command line interface

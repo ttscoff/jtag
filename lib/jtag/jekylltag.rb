@@ -87,8 +87,8 @@ class JTag
         post_has_tag = true
       end
     }
-
-    current_tags.push(merged) if post_has_tag
+    return false unless post_has_tag
+    current_tags.push(merged)
     current_tags.uniq!
     current_tags.sort
   end

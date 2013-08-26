@@ -1,6 +1,8 @@
 = jtag
 
-Describe your project here
+jTag is a simple command line application for manipulating Jekyll tags in the YAML headers. It can perform mass operations such as tag addition, removal, merging and sorting. It can also suggest relevant tags based on the content of the post matched against your existing tagset (requires a plugin/template in your jekyll install).
+
+Configuration includes a persistent blacklist and synonym definitions. Tags manually added to posts are automatically whitelisted for the auto-tagger. The autotagger can update your posts directly, or be used to provide suggestions that you can manually insert in the post.
 
 :include:jtag.rdoc
 
