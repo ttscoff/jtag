@@ -1,0 +1,11 @@
+---
+layout: nil
+---
+{
+	"tags_count": [{% for tag in page.json_tags_count %}
+		{"name":"{{tag.name}}","count":{{tag.count}}},{% endfor %}
+		false],
+	"tags": [{% for tag in page.json_tags %}
+		"{{tag}}",{% endfor %}
+		false]
+}
