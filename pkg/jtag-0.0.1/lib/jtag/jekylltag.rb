@@ -78,6 +78,22 @@ class JTag
     end
   end
 
+  def merge_tags(tags, merged, file)
+    current_tags = post_tags(file)
+    post_has_tag = false
+    tags.each {|tag|
+      if current_tags.include?(tag)
+        current_tags.delete(tag)
+        post_has_tag = true
+      end
+    }
+
+    current_tags.push(merged) if post_has_tag
+    current_tags.uniq!
+    current_tags.sort
+  end
+
+
   def suggest(input)
     yaml = YAML::load(input) || false
     exit_now! "Invalid post header" unless yaml

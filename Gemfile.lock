@@ -1,9 +1,8 @@
 PATH
   remote: .
   specs:
-    jtag (0.0.1)
+    jtag (0.1.0)
       gli (= 2.7.0)
-      json
 
 GEM
   remote: https://rubygems.org/

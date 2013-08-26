@@ -8,7 +8,7 @@ program_desc 'Autotagging for Jekyll'
 
 version Jtag::VERSION
 
-@config_files = ["blacklist.txt","config.yml","stopwords.txt","synonyms.yml"]
+@config_files = %w{blacklist.txt config.yml stopwords.txt synonyms.yml}
 @config_target = File.expand_path("~/.jtag")
 
 # If you have any errors, just raise them
@@ -32,6 +32,11 @@ flag [:d,:debug]
 
 desc 'Run silently'
 switch [:s,'silent']
+
+desc "Test (Dry run, don't update files)"
+long_desc "Run all commands and show results on the command line, but don't overwrite/update any files"
+default_value false
+switch [:t,'test']
 
 desc 'Update and notify user of configuration files location'
 command :config do |c|
@@ -83,7 +88,7 @@ end
 desc 'List tags, optionally filter for keyword'
 long_desc 'This command can be used to find the exact format for a given tag to keep spaces, underscores, capitalization and pluralization consistent'
 arg_name 'keyword'
-command :tags do |c|
+command :find do |c|
   c.action do |global_options,options,args|
     tags = @jt.get_tags({:counts => true})
     if args.length > 1
@@ -101,6 +106,62 @@ command :tags do |c|
     end
   end
 end
+
+desc 'Show the current tags for posts'
+arg_name 'filenames'
+command :tags do |c|
+  c.action do |global_options,options,args|
+    args.each{|file|
+      tags = @jt.post_tags(file)
+      puts
+      puts file + ":"
+      if tags.empty? || tags.nil?
+        puts "No tags in post"
+      else
+        tags.each {|tag|
+          puts "- #{tag}"
+        }
+      end
+    }
+  end
+end
+
+desc 'Merge multiple tags into one'
+long_desc 'Scans the specified posts for any of the tags, merging any found into the last one in the list'
+arg_name 'tags to merge merge_tag'
+command :merge do |c|
+
+  c.action do |global_options, options, args|
+    files = []
+    tags = []
+    args.length.times do
+      arg = args.pop
+      if File.exists?(arg)
+        files.push(arg)
+      else
+        exit_now! "No valid filename in arguments" if files.empty?
+        tags.push(arg)
+      end
+    end
+
+    exit_now! "Needs at least two tag inputs, one or more to merge, one to merge to" if tags.length < 2
+    merge_tag = tags.pop
+    files.each {|file|
+      new_tags = @jt.merge_tags(tags,merge_tag,file)
+      unless global_options[:t]
+        @jt.update_file_tags(file, new_tags)
+        puts
+        puts "Updated tags for #{file}" unless global_options[:s]
+      end
+      unless global_options[:s]
+        puts
+        puts file + ":"
+        puts new_tags.join("\n")
+      end
+    }
+  end
+end
+
 
 desc 'Blacklist a specific tag'
 arg_name 'tag [tag2...]'
@@ -122,81 +183,107 @@ end
 desc 'Add tags to post'
 arg_name 'tags to add from_post_file_or_pattern'
 command :add do |c|
-  c.desc 'Overwrite file'
-  c.default_value true
-  c.switch [:overwrite]
 
   c.action do |global_options,options,args|
-    file = args.pop
-    if File.exists?(file)
+    files = []
+    new_tags = []
+    args.length.times do
+      arg = args.pop
+      if File.exists?(arg)
+        files.push(arg)
+      else
+        exit_now! "No valid filename in arguments" if files.empty?
+        new_tags.push(arg)
+      end
+    end
+
+    exit_now! "No tags found in arguments" if new_tags.empty?
+
+    files.each {|file|
       tags = @jt.post_tags(file)
-      tags.concat(args)
+      tags.concat(new_tags)
       tags.uniq!
       tags.sort!
-      if options[:overwrite]
+      unless global_options[:t]
         @jt.update_file_tags(file,tags)
         puts "Updated tags for #{file}" unless global_options[:s]
       end
       unless global_options[:s]
-        puts "Result:"
+        puts
+        puts File.basename(file) + ":"
         puts tags.join("\n")
       end
-    else
-      raise "Last argument must be a valid file"
-    end
+    }
   end
 end
 
 desc 'Remove tags from a post'
 arg_name 'tags to remove from_post_file_or_pattern'
 command :remove do |c|
-  c.desc 'Overwrite file'
-  c.default_value true
-  c.switch [:overwrite]
 
   c.action do |global_options,options,args|
-    file = args.pop
-    if File.exists?(file)
+    files = []
+    remove_tags = []
+    args.length.times do
+      arg = args.pop
+      if File.exists?(arg)
+        files.push(arg)
+      else
+        exit_now! "No valid filename in arguments" if files.empty?
+        remove_tags.push(arg)
+      end
+    end
+
+    exit_now! "No tags found in arguments" if remove_tags.empty?
+
+    files.each {|file|
       tags = @jt.post_tags(file)
-      args.each { |d|
+      remove_tags.each { |d|
         tags.delete_if { |tag| tag == d }
       }
-      if options[:overwrite]
+      unless global_options[:t]
         @jt.update_file_tags(file,tags)
         puts "Updated tags for #{file}" unless global_options[:s]
       end
       unless global_options[:s]
-        puts "Result:"
+        puts
+        puts File.basename(file) + ":"
         puts tags.join("\n")
       end
-    else
-      raise "Last argument must be a valid file"
-    end
+    }
   end
 end
 
 desc 'Generate a list of recommended tags, optionally updating the file'
 arg_name 'filename'
 command :tag do |c|
-  c.desc 'Update the file with the new tags'
-  c.switch [:u,'update']
-
   c.action do |global_options,options,args|
 
     args.each {|file|
       if File.exists?(File.expand_path(file))
-        input = IO.read(File.expand_path(args[0]))
+        input = IO.read(File.expand_path(file))
         suggestions = @jt.suggest(input)
-        if options[:u]
+        unless global_options[:t]
           if @jt.update_file_tags(file, suggestions)
-            puts "Updated file #{file} with:"
+            unless global_options[:s]
+              puts
+              puts "Updated file #{file} with:"
+            end
           else
-            puts "Failed to update #{file} with:"
+            unless global_options[:s]
+              puts
+              puts "Failed to update #{file} with:"
+            end
           end
         end
-        suggestions.each {|tag|
-          puts "- #{tag}"
-        }
+        if !global_options[:s] || global_options[:t]
+          puts
+          puts File.basename(file) + ":"
+          suggestions.sort!.each {|tag|
+            puts "- #{tag}"
+          }
+        end
+        suggestions = nil
       else
         raise "No such file: #{file}"
       end
