@@ -95,7 +95,7 @@ command :search do |c|
   c.desc 'Format to use when outputting tags to console: list, json, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json)$/, :type => String
+  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json)$/i, :type => String
 
   c.desc 'Include tag counts'
   c.arg_name 'counts'
@@ -107,7 +107,7 @@ command :search do |c|
     if args.length > 0
       tags.delete_if {|tag|
         re = args.join("|")
-        if tag && tag['name'] =~ /(#{re})/
+        if tag && tag['name'] =~ /(#{re})/i
           false
         else
           true
