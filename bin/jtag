@@ -147,7 +147,7 @@ command :tags do |c|
         console_log File.basename(file) + ":"
       end
       if tags.empty? || tags.nil?
-        console_log "No tags in post"
+        console_log "No tags in post", {:err => true}
       else
         output_tags(tags,options[:format])
       end
@@ -168,12 +168,16 @@ command :sort do |c|
     args.each{|file|
       tags = @jt.post_tags(file)
       tags.uniq!
-      tags.sort
-      @jt.update_file_tags(file, tags)
-      console_log
-      console_log File.basename(file) + ":"
+      tags.sort!
+      unless global_options[:t]
+        @jt.update_file_tags(file, tags)
+      end
+      if args.length > 1
+        console_log
+        console_log File.basename(file) + ":"
+      end
       if tags.empty? || tags.nil?
-        console_log "No tags in post"
+        console_log "No tags in post", {:err => true}
       else
         output_tags(tags,options[:format])
       end
@@ -240,8 +244,8 @@ command :blacklist do |c|
   end
 end
 
-desc 'Add tags to post'
-arg_name 'tags to add from_post_file_or_pattern'
+desc 'Add tags to post(s)'
+arg_name 'tags', :multiple
 command :add do |c|
   c.desc 'Format to use when outputting tags to console: list, json, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
@@ -281,8 +285,8 @@ command :add do |c|
   end
 end
 
-desc 'Remove tags from a post'
-arg_name 'tags to remove from_post_file_or_pattern'
+desc 'Remove tags from post(s)'
+arg_name 'tags', :multiple
 command :remove do |c|
   c.desc 'Format to use when outputting tags to console: list, json, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
@@ -366,9 +370,13 @@ def output_tags(tags,format='yaml')
   when 'csv'
     console_log tags.to_csv
   when 'json'
-    console_log tags.to_json
+    out = {}
+    out['tags'] = tags
+    console_log out.to_json
   else
-    console_log tags.to_yaml
+    out = {}
+    out['tags'] = tags
+    console_log out.to_yaml
   end
 end
 
