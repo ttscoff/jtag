@@ -117,7 +117,7 @@ Use the global `-t` option with jTag to run it in "test" mode. No files will be 
 : Use **add** on a single file, a glob pattern or the results of a grep, ack or find command (using xargs) to add one or more tags to the specified posts. With this, you can quickly add tags to an individual post, or add a tag to any posts that contain certain words in its content or title.
 
 
-        find source/_posts -name "*marky*" \| xargs jtag add markdownifier
+        find source/_posts -name "*marky*" | xargs jtag add markdownifier
 
 `remove`
 : Use **remove** to remove tags on select files, or run it on an entire folder to purge tags from your system.
