@@ -146,7 +146,7 @@ command :tags do |c|
       tags = @jt.post_tags(@piped_content,true)
       if args.length > 1
         console_log
-        console_log File.basename(file) + ":"
+        console_log "STDIN:"
       end
       if tags.empty? || tags.nil?
         console_log "No tags in post", {:err => true}
@@ -352,11 +352,21 @@ command :tag do |c|
   c.flag [:f,:format], :must_match => /^(csv|list|yaml|json)$/, :type => String
 
   c.action do |global_options,options,args|
-
+    if @piped_content
+      suggestions = @jt.suggest(@piped_content)
+      if !global_options[:s] || global_options[:t]
+        if args.length > 1
+          console_log
+          console_log "STDIN:", {:err => true}
+        end
+        output_tags(suggestions,options[:format])
+      end
+    end
     args.each {|file|
       if File.exists?(File.expand_path(file))
         input = IO.read(File.expand_path(file))
         suggestions = @jt.suggest(input)
+
         unless global_options[:t]
           if @jt.update_file_tags(file, suggestions)
             console_log

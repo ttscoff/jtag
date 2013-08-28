@@ -95,7 +95,7 @@ class JTag
 
 
   def suggest(input)
-    parts = input.split(/[^\.\-]{3}\s*$/)
+    parts = input.split(/^[\.\-]{3}\s*$/)
     if parts.length >= 2
       begin
         yaml = YAML::load(parts[1])
@@ -109,12 +109,12 @@ class JTag
       current_tags = []
       title = ""
     end
-
-    @content = (title + parts[2..(parts.length-1)]).strip_all.strip_urls rescue input.strip_all.strip_urls
+    @content = (title + parts[2..-1].join(" ")).strip_all.strip_urls rescue input.strip_all.strip_urls
     @words = split_words
     @auto_tags = []
     populate_auto_tags
-    @auto_tags.concat(current_tags).uniq!
+
+    @auto_tags.concat(current_tags).uniq
   end
 
   def split_words
