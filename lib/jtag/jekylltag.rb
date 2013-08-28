@@ -62,9 +62,13 @@ class JTag
     input = IO.read(file)
     # Check to see if it's a full post with YAML headers
     post_parts = input.split(/^[\.\-]{3}\s*$/)
-    raise "File has improper YAML header" unless post_parts.length == 3
-    after = post_parts[2].strip
-    yaml = YAML::load(input)
+    if post_parts.length >= 3
+      after = post_parts[2].strip
+      yaml = YAML::load(input)
+    else
+      after = input
+      yaml = YAML::load("--- title: #{File.basename(file)}")
+    end
     [yaml, after]
   end
 
