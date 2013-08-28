@@ -1,3 +1,4 @@
+# encoding: utf-8
 class String
   # convert "WikiLink" to "Wiki link"
   def break_camel

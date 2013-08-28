@@ -1,3 +1,4 @@
+# encoding: utf-8
 class JTag
 
   def initialize(support_dir, config)
@@ -60,21 +61,20 @@ class JTag
   def split_post(file)
     input = IO.read(file)
     # Check to see if it's a full post with YAML headers
-    post_parts = input.split(/^---\s*$/)
+    post_parts = input.split(/^[\.\-]{3}\s*$/)
     raise "File has improper YAML header" unless post_parts.length == 3
     after = post_parts[2].strip
     yaml = YAML::load(input)
     [yaml, after]
   end
 
-  def post_tags(file)
-    if File.exists?(file)
-      input = IO.read(file)
-      yaml = YAML::load(input) || false
-      exit_now! "Invalid post header" unless yaml
+  def post_tags(file,piped=false)
+    begin
+      input = piped ? file : IO.read(file)
+      yaml = YAML::load(input)
       return yaml["tags"] || []
-    else
-      raise "File #{file} does not exist"
+    rescue
+      return []
     end
   end
 
@@ -95,11 +95,22 @@ class JTag
 
 
   def suggest(input)
-    yaml = YAML::load(input) || false
-    exit_now! "Invalid post header" unless yaml
-    current_tags = yaml["tags"] || []
-    title = yaml["title"] || ""
-    @content = (title + after).strip_all.strip_urls rescue input.strip_all.strip_urls
+    parts = input.split(/[^\.\-]{3}\s*$/)
+    if parts.length >= 2
+      begin
+        yaml = YAML::load(parts[1])
+        current_tags = yaml["tags"] || []
+        title = yaml["title"] || ""
+      rescue
+        current_tags = []
+        title = ""
+      end
+    else
+      current_tags = []
+      title = ""
+    end
+
+    @content = (title + parts[2..(parts.length-1)]).strip_all.strip_urls rescue input.strip_all.strip_urls
     @words = split_words
     @auto_tags = []
     populate_auto_tags
@@ -121,7 +132,7 @@ class JTag
     @words.each { |word| freqs[word] += 1 }
     freqs.delete_if {|k,v| v < @min_matches }
 
-    exit_with_message "No high frequency words", 1 if freqs.empty?
+    return [] if freqs.empty?
 
     freqs.sort_by {|k,v| [v * -1, k] }.each {|word|
       index = @tags.keys.index(word[0])

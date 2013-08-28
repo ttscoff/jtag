@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# encoding: utf-8
 require 'gli'
 require 'jtag'
 
@@ -140,8 +141,9 @@ command :tags do |c|
   c.flag [:f,:format], :must_match => /^(csv|list|yaml|json)$/, :type => String
 
   c.action do |global_options,options,args|
-    args.each{|file|
-      tags = @jt.post_tags(file)
+
+    if @piped_content
+      tags = @jt.post_tags(@piped_content,true)
       if args.length > 1
         console_log
         console_log File.basename(file) + ":"
@@ -150,6 +152,22 @@ command :tags do |c|
         console_log "No tags in post", {:err => true}
       else
         output_tags(tags,options[:format])
+      end
+    end
+    args.each{|file|
+      if File.exists?(file)
+        tags = @jt.post_tags(file)
+        if args.length > 1
+          console_log
+          console_log File.basename(file) + ":"
+        end
+        if tags.empty? || tags.nil?
+          console_log "No tags in post", {:err => true}
+        else
+          output_tags(tags,options[:format])
+        end
+      else
+        raise "File not found: #{file}"
       end
     }
   end
@@ -408,6 +426,13 @@ pre do |global,command,options,args|
 
   global[:config] = YAML::load(File.open(configfile,"r"))
   global[:support] = File.expand_path("~/.jtag")
+
+  if STDIN.stat.size > 0
+    @piped_content = STDIN.read
+  else
+    @piped_content = false
+  end
+
   @jt = JTag.new(global[:support], global[:config])
 
   true

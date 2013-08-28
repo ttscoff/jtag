@@ -127,7 +127,7 @@ Use the global `-t` option with jTag to run it in "test" mode. No files will be 
 `search`
 : Use **search** to list all of the tags on your blog, optionally filtering the list with a keyword as the argument. Multiple keywords will be combined in an boolean OR fashion, so any tags that match any of the keywords will be returned. Keywords can also be quoted regular expressions (e.g. "^mark" to find only tags that _start_ with "mark"). 
 
-: Add the **-c** option to get tags back with a number representing how many posts they appear in. This command is a tool to help you find the proper punctuation, capitalization and pluralization of existing tags to ensure consistency.
+Add the **-c** option to get tags back with a number representing how many posts they appear in. This command is a tool to help you find the proper punctuation, capitalization and pluralization of existing tags to ensure consistency.
 
         $ jtag search -f list markdown
         markdown
