@@ -1,2 +1,3 @@
 ---
 tags_location: localhost/data/tags.json
+min_matches: 2
