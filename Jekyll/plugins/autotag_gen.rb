@@ -26,23 +26,20 @@ module Jekyll
       @name = 'tags.json'
       self.process(@name)
       self.read_yaml(File.join(base, '_layouts'), 'tags_json.html')
-      tags_with_counts = site.tags.sort_by { |k,v| v.count }.reverse
-        self.data['json_tags'] = tags_with_counts.sort {|a,b| a[0].downcase <=> b[0].downcase }.map {|k,v| k }
-        self.data['json_tags_count'] = []
-        tags_with_counts.each { |k,v|
+      tags_with_counts = site.tags.delete_if {|k,v|
+        site.config['tag_excludes'].include?(k) unless site.config['tag_excludes'].nil?
+      }.sort_by { |k,v| v.count }.reverse
+
+      self.data['json_tags'] = tags_with_counts.sort {|a,b| a[0].downcase <=> b[0].downcase }.map {|k,v| k }
+      self.data['json_tags_count'] = []
+      tags_with_counts.each { |k,v|
         self.data['json_tags_count'] << {
           "name" => k,
           "count" => v.count
         }
-        if site.config["tag_excludes"]
-          tags.delete_if! {|k,v|
-            site.config['tag_excludes'].include?(k) unless site.config['tag_excludes'].nil?
-          }
-        end
       }
     end
   end
-
   class AutoTagGenerator < Generator
     safe true
     def generate(site)
