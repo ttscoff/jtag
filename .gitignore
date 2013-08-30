@@ -1,3 +1,4 @@
 jtag.taskpaper
 pkg
 *.gem
+*.sublime*

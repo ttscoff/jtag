@@ -4,6 +4,7 @@ PATH
     jtag (0.1.8)
       gli (= 2.7.0)
       json
+      plist
 
 GEM
   remote: https://rubygems.org/
@@ -29,6 +30,7 @@ GEM
     json (1.8.0)
     multi_json (1.7.7)
     multi_test (0.0.2)
+    plist (3.1.0)
     rake (10.1.0)
     rdoc (4.0.1)
       json (~> 1.4)

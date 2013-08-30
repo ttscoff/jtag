@@ -93,10 +93,10 @@ desc 'List tags, optionally filter for keywords/regular expressions (OR)'
 long_desc 'This command can be used to find the exact format for a given tag to keep spaces, underscores, capitalization and pluralization consistent'
 arg_name 'keyword', :multiple
 command :search do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, csv or yaml. Defaults to yaml.'
+  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json)$/i, :type => String
+  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/i, :type => String
 
   c.desc 'Include tag counts'
   c.arg_name 'counts'
@@ -135,10 +135,10 @@ end
 desc 'Show the current tags for posts'
 arg_name 'filenames', :multiple
 command :tags do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, csv or yaml. Defaults to yaml.'
+  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json)$/, :type => String
+  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.action do |global_options,options,args|
 
@@ -177,10 +177,10 @@ end
 desc 'Sort the existing tags for posts'
 arg_name 'filenames', :multiple
 command :sort do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, csv or yaml. Defaults to yaml.'
+  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json)$/, :type => String
+  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.action do |global_options,options,args|
     args.each{|file|
@@ -207,10 +207,10 @@ desc 'Merge multiple tags into one'
 long_desc 'Scans the specified posts for any of the tags, merging any found into the last one in the list'
 arg_name 'tags to merge merge_tag'
 command :merge do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, csv or yaml. Defaults to yaml.'
+  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json)$/, :type => String
+  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.action do |global_options, options, args|
     files = []
@@ -265,10 +265,10 @@ end
 desc 'Add tags to post(s)'
 arg_name 'tags', :multiple
 command :add do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, csv or yaml. Defaults to yaml.'
+  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json)$/, :type => String
+  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
 
   c.action do |global_options,options,args|
@@ -306,10 +306,10 @@ end
 desc 'Remove tags from post(s)'
 arg_name 'tags', :multiple
 command :remove do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, csv or yaml. Defaults to yaml.'
+  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json)$/, :type => String
+  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.action do |global_options,options,args|
     files = []
@@ -346,10 +346,10 @@ end
 desc 'Generate a list of recommended tags, optionally updating the file'
 arg_name 'filename', :multiple
 command :tag do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, csv or yaml. Defaults to yaml.'
+  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json)$/, :type => String
+  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.action do |global_options,options,args|
     if @piped_content
@@ -401,6 +401,9 @@ def output_tags(tags,format='yaml')
     out = {}
     out['tags'] = tags
     console_log out.to_json
+  when 'plist'
+    out = {}
+    console_log tags.to_plist
   else
     out = {}
     out['tags'] = tags

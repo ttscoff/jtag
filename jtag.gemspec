@@ -32,4 +32,5 @@ lib/jtag.rb
   s.add_development_dependency('aruba')
   s.add_runtime_dependency('gli','2.7.0')
   s.add_runtime_dependency('json')
+  s.add_runtime_dependency('plist')
 end
