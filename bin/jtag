@@ -119,7 +119,7 @@ command :search do |c|
       else
         tags.map! {|tag| tag['name'] }
       end
-      output_tags(tags,options[:format])
+      output_tags(tags,{ :format => options[:format] })
     else
       tags.delete_if {|tag| !tag }
       if options[:c]
@@ -127,10 +127,79 @@ command :search do |c|
       else
         tags.map! {|tag| tag['name'] }
       end
-      output_tags(tags,options[:format])
+      output_tags(tags,{ :format => options[:format] })
     end
   end
 end
+
+desc 'List posts with tag(s)'
+arg_name 'tags', :multiple
+command :posts_tagged do |c|
+  c.desc 'Boolean operator for multiple tags (AND/OR/NOT)'
+  c.arg_name 'bool'
+  c.default_value 'OR'
+  c.flag [:b,:bool], :must_match => /(AND|OR|NOT)/i, :type => String
+
+  c.desc 'Format to use when outputting file list: list, json, plist, csv or yaml. Defaults to list.'
+  c.arg_name 'output_format'
+  c.default_value 'list'
+  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
+
+  c.desc 'If output format is list, print without newlines.'
+  c.switch [:print0]
+
+  c.action do |global_options,options,args|
+    bool = options[:bool].upcase
+    files = []
+    tags = []
+    matches = []
+    args.length.times do
+      arg = args.pop
+      if File.exists?(arg)
+        files.push(arg)
+      else
+        exit_now! "No valid filename in arguments" if files.empty?
+        tags.push(arg)
+      end
+    end
+    files.each {|file|
+      if File.exists?(file)
+        post_tags = @jt.post_tags(file)
+
+        if bool == "AND"
+          matched = 0
+          tags.each {|tag|
+            matched += 1 if post_tags.include?(tag)
+          }
+          matches.push(file) if matched == tags.length
+        elsif bool == "NOT"
+          matched = false
+          tags.each {|tag|
+            matched = true if post_tags.include?(tag)
+          }
+          matches.push(file) unless matched
+        else
+          tags.each {|tag|
+            if post_tags.include?(tag)
+              matches.push(file) unless matches.include?(file)
+            end
+          }
+        end
+      else
+        raise "File not found: #{file}"
+      end
+    }
+
+    search_string = tags.join(" #{bool} ")
+    if matches.empty?
+      console_log "No matching files found for #{search_string}"
+    else
+      console_log "(#{search_string})", {:err => true}
+      output_tags(matches, { :format => options[:format], :print0 => options[:print0], :grouping => "files" })
+    end
+  end
+end
+
 
 desc 'Show the current tags for posts'
 arg_name 'filenames', :multiple
@@ -151,7 +220,7 @@ command :tags do |c|
       if tags.empty? || tags.nil?
         console_log "No tags in post", {:err => true}
       else
-        output_tags(tags,options[:format])
+        output_tags(tags,{ :format => options[:format] })
       end
     end
     args.each{|file|
@@ -164,7 +233,7 @@ command :tags do |c|
         if tags.empty? || tags.nil?
           console_log "No tags in post", {:err => true}
         else
-          output_tags(tags,options[:format])
+          output_tags(tags,{ :format => options[:format] })
         end
       else
         raise "File not found: #{file}"
@@ -197,7 +266,7 @@ command :sort do |c|
       if tags.empty? || tags.nil?
         console_log "No tags in post", {:err => true}
       else
-        output_tags(tags,options[:format])
+        output_tags(tags,{ :format => options[:format] })
       end
     }
   end
@@ -239,7 +308,7 @@ command :merge do |c|
       end
       console_log
       console_log File.basename(file) + ":"
-      output_tags(new_tags,options[:format])
+      output_tags(new_tags,{ :format => options[:format] })
     }
   end
 end
@@ -298,7 +367,7 @@ command :add do |c|
 
       console_log
       console_log File.basename(file) + ":"
-      output_tags(tags,options[:format])
+      output_tags(tags,{ :format => options[:format] })
     }
   end
 end
@@ -338,7 +407,7 @@ command :remove do |c|
 
       console_log
       console_log File.basename(file) + ":"
-      output_tags(tags,options[:format])
+      output_tags(tags,{ :format => options[:format] })
     }
   end
 end
@@ -359,7 +428,7 @@ command :tag do |c|
           console_log
           console_log "STDIN:", {:err => true}
         end
-        output_tags(suggestions,options[:format])
+        output_tags(suggestions,{ :format => options[:format] })
       end
     end
     args.each {|file|
@@ -381,7 +450,7 @@ command :tag do |c|
             console_log
             console_log File.basename(file) + ":", {:err => true}
           end
-          output_tags(suggestions,options[:format])
+          output_tags(suggestions,{ :format => options[:format] })
         end
         suggestions = nil
       else
@@ -391,10 +460,23 @@ command :tag do |c|
   end
 end
 
-def output_tags(tags,format='yaml')
+def output_tags(tags,options)
+  format = options[:format] || 'yaml'
+  print0 = options[:print0] || false
+
   case format
   when 'list'
-    console_log tags.join("\n")
+    unless print0
+      console_log tags.join("\n")
+    else
+      console_log tags.map {|tag|
+        if tag.strip =~ /\b\s\b/
+          %Q{"#{tag.strip}"}
+        else
+          tag.strip
+        end
+      }.join(" ")
+    end
   when 'csv'
     console_log tags.to_csv
   when 'json'
@@ -406,7 +488,8 @@ def output_tags(tags,format='yaml')
     console_log tags.to_plist
   else
     out = {}
-    out['tags'] = tags
+    options[:grouping] ||= "tags"
+    out[options[:grouping]] = tags
     console_log out.to_yaml
   end
 end
