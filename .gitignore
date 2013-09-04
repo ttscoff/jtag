@@ -2,3 +2,4 @@ jtag.taskpaper
 pkg
 *.gem
 *.sublime*
+html
