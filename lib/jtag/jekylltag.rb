@@ -1,13 +1,32 @@
 # encoding: utf-8
+
 class JTag
+  attr_reader :default_post_location
+  attr_accessor :tags_key
 
   def initialize(support_dir, config)
     @support = support_dir
-    @min_matches = config["min_matches"] || 2
-    @tags_loc = config["tags_location"]
-    @blacklistfile = File.join(@support,"blacklist.txt")
+    begin
+      @tags_loc = config['tags_location']
+      @tags_loc.sub!(/^https?:\/\//,'')
+    rescue
+      raise "No tags location in configuration."
+    end
+    @min_matches = config['min_matches'] || 2
+    @tags_key = config['tags_key'] || 'tags'
+
+    if config.has_key? 'default_post_location'
+      @default_post_location = File.expand_path(config['default_post_location']) || false
+    else
+      console_log "#{color('yellow')}No #{color('boldyellow')}default_post_location#{color('yellow')} set.", :err => true
+      console_log "If you commonly work on the same posts you can add the path and *.ext", :err => true
+      console_log "to this key in ~/.jtag/config.yml. Then, if you don't specify files", :err => true
+      console_log "to act on in a command, it will fall back to those. Nice!#{color('default')}", :err => true
+      @default_post_location = false
+    end
+    @blacklistfile = File.join(@support,'blacklist.txt')
     @blacklist = IO.read(@blacklistfile).split("\n") || []
-    @skipwords = IO.read(File.join(support_dir,"stopwords.txt")).split("\n") || []
+    @skipwords = IO.read(File.join(support_dir,'stopwords.txt')).split("\n") || []
     remote_tags = get_tags
     @tags = {}
     remote_tags.each {|tag| @tags[Text::PorterStemming.stem(tag).downcase] = tag if tag}
@@ -72,11 +91,11 @@ class JTag
     [yaml, after]
   end
 
-  def post_tags(file,piped=false)
+  def post_tags(file, piped=false)
     begin
       input = piped ? file : IO.read(file)
       yaml = YAML::load(input)
-      return yaml["tags"] || []
+      return yaml[@tags_key] || []
     rescue
       return []
     end
@@ -103,7 +122,7 @@ class JTag
     if parts.length >= 2
       begin
         yaml = YAML::load(parts[1])
-        current_tags = yaml["tags"] || []
+        current_tags = yaml[@tags_key] || []
         title = yaml["title"] || ""
       rescue
         current_tags = []
@@ -175,7 +194,7 @@ class JTag
     begin
       if File.exists?(file)
         yaml, after = split_post(file)
-        yaml["tags"] = tags
+        yaml[@tags_key] = tags
         File.open(file,'w+') do |f|
           f.puts yaml.to_yaml
           f.puts "---"
@@ -190,5 +209,52 @@ class JTag
       return false
     end
   end
-end
 
+  private
+
+  def color(name)
+      color = {}
+      color['black'] = "\033[0;30m"
+      color['red'] = "\033[0;31m"
+      color['green'] = "\033[0;32m"
+      color['yellow'] = "\033[0;33m"
+      color['blue'] = "\033[0;34m"
+      color['magenta'] = "\033[0;35m"
+      color['cyan'] = "\033[0;36m"
+      color['white'] = "\033[0;37m"
+      color['bgblack'] = "\033[0;40m"
+      color['bgred'] = "\033[0;41m"
+      color['bggreen'] = "\033[0;42m"
+      color['bgyellow'] = "\033[0;43m"
+      color['bgblue'] = "\033[0;44m"
+      color['bgmagenta'] = "\033[0;45m"
+      color['bgcyan'] = "\033[0;46m"
+      color['bgwhite'] = "\033[0;47m"
+      color['boldblack'] = "\033[1;30m"
+      color['boldred'] = "\033[1;31m"
+      color['boldgreen'] = "\033[1;32m"
+      color['boldyellow'] = "\033[1;33m"
+      color['boldblue'] = "\033[1;34m"
+      color['boldmagenta'] = "\033[1;35m"
+      color['boldcyan'] = "\033[1;36m"
+      color['boldwhite'] = "\033[1;37m"
+      color['boldbgblack'] = "\033[1;40m"
+      color['boldbgred'] = "\033[1;41m"
+      color['boldbggreen'] = "\033[1;42m"
+      color['boldbgyellow'] = "\033[1;43m"
+      color['boldbgblue'] = "\033[1;44m"
+      color['boldbgmagenta'] = "\033[1;45m"
+      color['boldbgcyan'] = "\033[1;46m"
+      color['boldbgwhite'] = "\033[1;47m"
+      color['default'] = "\033[0;39m"
+      color['warning'] = color['yellow']
+      color['warningb'] = color['boldyellow']
+      color['success'] = color['green']
+      color['successb'] = color['boldgreen']
+      color['neutral'] = color['white']
+      color['neutralb'] = color['boldwhite']
+      color['info'] = color['cyan']
+      color['infob'] = color['boldcyan']
+      color[name]
+  end
+end
