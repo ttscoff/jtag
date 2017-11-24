@@ -10,6 +10,7 @@ Configuration includes a persistent blacklist and synonym definitions. Tags manu
 
 If you're not already using git to manage your blog (i.e. not deploying via git), just add the non-public parts of the directory (the source files) to a repo and make a commit when you finish post. A local repo would be fine in most cases, but a remote repo offers a little extra peace of mind. Mine is set up so that a gen_deploy Rake task automatically creates a snapshot every time I publish, in addition to my own commits.
 
+
 The jTag tool is at 0.1.6 at the time of this writing. It's been tested, but never used by anyone but me until today. I'll be adding features and updating as I go, so please [let me know about bugs][support]. 
 
 First, though, let's cover the plugin side, which hasn't needed to change since I first wrote it. Set it up and forget it.
@@ -153,3 +154,6 @@ Any command that outputs a list of tags has the option (`-f, --format`)to change
 If you're interested, there's also a quick script you can drop into `.bash_profile` and get [jtag tab-completion in Bash](https://github.com/ttscoff/jtag/blob/master/jtag.completion.bash).
 
 [support]: https://github.com/ttscoff/jtag/issues/
+
+
+![](http://cdn3.brettterpstra.com/uploads/2013/08/jtag.jpg)
