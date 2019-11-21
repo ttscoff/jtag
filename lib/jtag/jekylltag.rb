@@ -40,13 +40,14 @@ class JTag
     counts = options[:counts] || false
     host, path = @tags_loc.match(/^([^\/]+)(\/.*)/)[1,2]
     tags = ""
-    http = Net::HTTP.new(host, 80)
-    http.start do |http|
-      request = Net::HTTP::Get.new(path)
-      response = http.request(request)
-      response.value
-      tags = response.body
-    end
+    # http = Net::HTTP.new(host, 80)
+    # http.start do |http|
+    #   request = Net::HTTP::Get.new(path)
+    #   response = http.request(request)
+    #   response.value
+    #   tags = response.body
+    # end
+    tags = `curl -sSL "#{@tags_loc}"`
     tags = JSON.parse(tags)
     if tags && tags.key?("tags")
       if counts
