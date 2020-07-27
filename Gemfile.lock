@@ -3,7 +3,7 @@ PATH
   specs:
     jtag (0.1.13)
       gli (~> 2.17.1)
-      json (~> 2.2.0)
+      json (>= 2.2, < 2.4)
       plist
 
 GEM
@@ -40,7 +40,7 @@ GEM
     ffi (1.11.2)
     gherkin (5.1.0)
     gli (2.17.2)
-    json (2.2.0)
+    json (2.3.1)
     multi_json (1.14.1)
     multi_test (0.1.2)
     plist (3.5.0)
