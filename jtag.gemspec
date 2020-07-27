@@ -30,6 +30,6 @@ lib/jtag.rb
   s.add_development_dependency('rdoc')
   s.add_development_dependency('aruba')
   s.add_runtime_dependency('gli','~> 2.17.1')
-  s.add_runtime_dependency('json', '~> 2.2.0')
+  s.add_runtime_dependency('json', '>= 2.2', '< 2.4')
   s.add_runtime_dependency('plist')
 end
