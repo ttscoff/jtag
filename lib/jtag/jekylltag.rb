@@ -78,8 +78,8 @@ class JTag
     compiled
   end
 
-  def split_post(file)
-    input = IO.read(file)
+  def split_post(file, piped = false)
+    input = piped ? file : IO.read(file)
     # Check to see if it's a full post with YAML headers
     post_parts = input.split(/^[\.\-]{3}\s*$/)
     if post_parts.length >= 3
@@ -94,7 +94,7 @@ class JTag
 
   def post_tags(file, piped=false)
     begin
-      input = piped ? file : IO.read(file)
+      input = piped ? file.strip : IO.read(file)
       yaml = YAML::load(input)
       return yaml[@tags_key] || []
     rescue
@@ -191,15 +191,21 @@ class JTag
     end
   end
 
-  def update_file_tags(file, tags)
+  def update_file_tags(file, tags, piped = false)
     begin
-      if File.exists?(file)
-        yaml, after = split_post(file)
+      if File.exists?(file) || piped
+        yaml, after = split_post(file, piped)
         yaml[@tags_key] = tags
-        File.open(file,'w+') do |f|
-          f.puts yaml.to_yaml
-          f.puts "---"
-          f.puts after
+        if piped
+          puts yaml.to_yaml
+          puts "---"
+          puts after
+        else
+          File.open(file,'w+') do |f|
+            f.puts yaml.to_yaml
+            f.puts "---"
+            f.puts after
+          end
         end
       else
         raise "File does not exist: #{file}"

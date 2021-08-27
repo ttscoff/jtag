@@ -11,10 +11,11 @@ version Jtag::VERSION
 
 @config_files = %w{blacklist.txt config.yml stopwords.txt synonyms.yml}
 @config_target = File.expand_path("~/.jtag")
+@piped_content = nil
 
 def config_files_complete?
   @config_files.each do |file|
-    return false unless File.exists?(File.join(@config_target,file))
+    return false unless File.exists?(File.join(@config_target, file))
   end
   true
 end
@@ -22,18 +23,18 @@ end
 desc 'Debug level'
 default_value '0'
 arg_name 'debug_level'
-flag [:d,:debug], :must_match => /\d+/, :type => Integer, :default_value => 0
+flag %i[d debug], :must_match => /\d+/, :type => Integer, :default_value => 0
 
 desc 'Run silently'
-switch [:s,:silent]
+switch %i[s silent]
 
 desc 'Perform case-insensitive matches and searches'
-switch [:i,:case_insensitive]
+switch %i[i case_insensitive]
 
 desc "Test (dry run, don't update files)"
 long_desc "Run all commands and show results on the command line, but don't overwrite/update any files"
 default_value false
-switch [:t,:test]
+switch %i[t test]
 
 def console_log(msg="", options={})
   err = options[:err] || false
@@ -52,7 +53,7 @@ def console_log(msg="", options={})
   unless err
     $stdout.puts msg
   else
-    $stderr.puts msg
+    warn msg
   end
 end
 
@@ -110,12 +111,12 @@ command :search do |c|
   c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/i, :type => String
+  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/i, :type => String
 
   c.desc 'Include tag counts'
   c.arg_name 'counts'
   c.default_value false
-  c.switch [:c,:counts]
+  c.switch %i[c counts]
 
   c.action do |global_options,options,args|
     tags = @jt.get_tags({:counts => true})
@@ -152,12 +153,12 @@ command :posts_tagged do |c|
   c.desc 'Boolean operator for multiple tags (AND/OR/NOT)'
   c.arg_name 'bool'
   c.default_value 'OR'
-  c.flag [:b,:bool], :must_match => /(AND|OR|NOT)/i, :type => String
+  c.flag %i[b bool], :must_match => /(AND|OR|NOT)/i, :type => String
 
   c.desc 'Format to use when outputting file list: list, json, plist, csv or yaml. Defaults to list.'
   c.arg_name 'output_format'
   c.default_value 'list'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
+  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.desc 'If output format is list, print without newlines.'
   c.switch [:print0]
@@ -225,22 +226,22 @@ command :loners do |c|
   c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
+  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.desc 'Upper limit for how many posts a tag can be attached to and still be a loner'
   c.arg_name 'max'
   c.default_value '2'
-  c.flag [:m,:max], :default_value => 2, :must_match => /^\d+$/
+  c.flag %i[m max], :default_value => 2, :must_match => /^\d+$/
 
   c.desc "Remove tags with fewer than X posts attached"
-  c.switch [:r,:remove], :default_value => false
+  c.switch %i[r remove], :default_value => false
 
   c.desc "Display output without attached occurence counts"
   c.switch [:no_counts], :default_value => false
 
   c.desc 'Output a file list of tags that can be edited and passed back in for removing'
   c.arg_name 'filename'
-  c.flag [:e,:edit], :default_value => false, :type => String
+  c.flag %i[e edit], :default_value => false, :type => String
 
   c.action do |global_options,options,args|
     max = options[:m].to_i
@@ -310,7 +311,7 @@ command :loners do |c|
           }
         }
         unless global_options[:t]
-          @jt.update_file_tags(file,tags)
+          @jt.update_file_tags(file, tags)
           console_log "Updated tags for #{file}", :log => true
         end
 
@@ -333,15 +334,15 @@ command :tags do |c|
   c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
+  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.action do |global_options,options,args|
 
     if @piped_content
-      tags = @jt.post_tags(@piped_content,true)
+      tags = @jt.post_tags(@piped_content, true)
       if args.length > 1
         console_log
-        console_log "STDIN:"
+        console_log 'STDIN:'
       end
       if tags.empty? || tags.nil?
         console_log "No tags in post", {:err => true}
@@ -375,7 +376,7 @@ command :sort do |c|
   c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
+  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.action do |global_options,options,args|
     args.each{|file|
@@ -404,7 +405,7 @@ command :merge do |c|
   c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
+  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.action do |global_options, options, args|
     files = []
@@ -469,7 +470,7 @@ command :add do |c|
   c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
+  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
 
   c.action do |global_options,options,args|
@@ -497,7 +498,7 @@ command :add do |c|
       tags.uniq!
       tags.sort!
       unless global_options[:t]
-        @jt.update_file_tags(file,tags)
+        @jt.update_file_tags(file, tags)
         console_log "Updated tags for #{file}", :log => true
       end
 
@@ -514,12 +515,12 @@ command :remove do |c|
   c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
   c.arg_name 'output_format'
   c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
+  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.desc 'A filepath to a list of tags to be removed'
   c.long_desc 'One tag per line, and leading numbers and pipes (|) will be ignored. This file format is generated automatically by the `loners` command, but any text file will do the trick.'
   c.arg_name 'input_file'
-  c.flag [:p,:path], :type => String
+  c.flag %i[p path], :type => String
 
   c.action do |global_options,options,args|
     files = []
@@ -565,7 +566,7 @@ command :remove do |c|
         }
       }
       unless global_options[:t]
-        @jt.update_file_tags(file,tags)
+        @jt.update_file_tags(file, tags)
         console_log "Updated tags for #{file}", :log => true
       end
 
@@ -579,20 +580,21 @@ end
 desc 'Generate a list of recommended tags, optionally updating the file'
 arg_name 'file_pattern', :multiple
 command :tag do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
+  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Use "complete" to output full text when input is STDIN.'
   c.arg_name 'output_format'
-  c.default_value 'yaml'
-  c.flag [:f,:format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
+  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist|complete)$/, :type => String, :default_value => 'yaml'
 
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
     if @piped_content
       suggestions = @jt.suggest(@piped_content)
-      if !global_options[:s] || global_options[:t]
-        if args.length > 1
-          console_log
-          console_log "STDIN:", :err => true
-        end
-        output_tags(suggestions, :format => options[:format], :filename => file )
+      if args.length > 0
+        console_log
+        console_log 'STDIN:', :err => true
+      end
+      if options[:format] == 'complete'
+        @jt.update_file_tags(@piped_content, suggestions, true)
+      else
+        output_tags(suggestions, :format => options[:format], :filename => nil)
       end
     end
     args.each {|file|
@@ -670,7 +672,7 @@ end
 #   end
 # end
 
-pre do |global,command,options,args|
+pre do |global, command, options, args|
   # Use skips_pre before a command to skip this block
   # on that command only
   @silent = global[:silent]
@@ -690,11 +692,7 @@ pre do |global,command,options,args|
   global[:config] = YAML::load(File.open(configfile,"r"))
   global[:support] = File.expand_path("~/.jtag")
 
-  if STDIN.stat.size > 0
-    @piped_content = STDIN.read
-  else
-    @piped_content = false
-  end
+  @piped_content = STDIN.stat.size > 0 ? STDIN.read : nil
 
   @jt = JTag.new(global[:support], global[:config])
 
