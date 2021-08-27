@@ -3,3 +3,4 @@ pkg
 *.gem
 *.sublime*
 html
+Gemfile.lock
