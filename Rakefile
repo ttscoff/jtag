@@ -65,7 +65,7 @@ desc 'Bump incremental version number'
 task :bump, :type do |t, args|
   args.with_defaults(:type => "inc")
   version_file = "lib/#{spec.name}/version.rb"
-  raise "File not found" unless File.exists? version_file
+  raise "File not found" unless File.exist? version_file
   content = IO.read(version_file)
   content.sub!(/VERSION = '(\d+)\.(\d+)\.(\d+)(\.\S+)?'/) {|m|
     major = $1.to_i

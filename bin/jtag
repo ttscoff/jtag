@@ -15,7 +15,7 @@ version Jtag::VERSION
 
 def config_files_complete?
   @config_files.each do |file|
-    return false unless File.exists?(File.join(@config_target, file))
+    return false unless File.exist?(File.join(@config_target, file))
   end
   true
 end
@@ -92,7 +92,7 @@ def write_config(atomic=false)
   end
 
   @config_files.each do |file|
-    unless File.exists?(File.join(@config_target,file))
+    unless File.exist?(File.join(@config_target,file))
       source_file = File.join(config_source,file)
       target_file = File.join(@config_target,file)
       FileUtils.cp(source_file, target_file)
@@ -170,20 +170,20 @@ command :posts_tagged do |c|
     matches = []
     args.length.times do
       arg = args.pop
-      if File.exists?(arg)
+      if File.exist?(arg)
         files.push(arg)
       else
         tags.push(arg)
       end
     end
     if files.empty?
-      if @jt.default_post_location && File.exists?(File.dirname(@jt.default_post_location))
+      if @jt.default_post_location && File.exist?(File.dirname(@jt.default_post_location))
         files = Dir.glob(@jt.default_post_location)
       end
     end
     exit_now! "No valid filename in arguments" if files.empty?
     files.each {|file|
-      if File.exists?(file)
+      if File.exist?(file)
         post_tags = @jt.post_tags(file)
 
         if bool == "AND"
@@ -255,7 +255,7 @@ command :loners do |c|
 
     if options[:e]
       path = File.expand_path(options[:e])
-      while File.exists?(path)
+      while File.exist?(path)
         if path =~ /(\d+)(\.[^\.]+?)?$/
           path.sub!(/(\d+)(\.[^\.]+?)?$/) do |m|
             $1.next! + $2
@@ -291,10 +291,10 @@ command :loners do |c|
       files = []
       args.length.times do
         arg = args.pop
-        files.push(arg) if File.exists?(arg)
+        files.push(arg) if File.exist?(arg)
       end
       if files.empty?
-        if @jt.default_post_location && File.exists?(File.dirname(@jt.default_post_location))
+        if @jt.default_post_location && File.exist?(File.dirname(@jt.default_post_location))
           files = Dir.glob(@jt.default_post_location)
         end
       end
@@ -351,7 +351,7 @@ command :tags do |c|
       end
     end
     args.each{|file|
-      if File.exists?(file)
+      if File.exist?(file)
         tags = @jt.post_tags(file)
         if args.length > 1
           console_log
@@ -412,14 +412,14 @@ command :merge do |c|
     tags = []
     args.length.times do
       arg = args.pop
-      if File.exists?(arg)
+      if File.exist?(arg)
         files.push(arg)
       else
         tags.push(arg)
       end
     end
     if files.empty?
-      if @jt.default_post_location && File.exists?(File.dirname(@jt.default_post_location))
+      if @jt.default_post_location && File.exist?(File.dirname(@jt.default_post_location))
         files = Dir.glob(@jt.default_post_location)
       end
     end
@@ -478,14 +478,14 @@ command :add do |c|
     new_tags = []
     args.length.times do
       arg = args.pop
-      if File.exists?(arg)
+      if File.exist?(arg)
         files.push(arg)
       else
         new_tags.push(arg)
       end
     end
     if files.empty?
-      if @jt.default_post_location && File.exists?(File.dirname(@jt.default_post_location))
+      if @jt.default_post_location && File.exist?(File.dirname(@jt.default_post_location))
         files = Dir.glob(@jt.default_post_location)
       end
     end
@@ -527,14 +527,14 @@ command :remove do |c|
     remove_tags = []
     args.length.times do
       arg = args.pop
-      if File.exists?(arg)
+      if File.exist?(arg)
         files.push(arg)
       else
         remove_tags.push(arg) unless options[:p]
       end
     end
     if files.empty?
-      if @jt.default_post_location && File.exists?(File.dirname(@jt.default_post_location))
+      if @jt.default_post_location && File.exist?(File.dirname(@jt.default_post_location))
         files = Dir.glob(@jt.default_post_location)
       end
     end
@@ -542,7 +542,7 @@ command :remove do |c|
 
     if options[:p]
       path = File.expand_path(options[:p])
-      exit_now! "Input file does not appear to be where you think it is." unless File.exists?(path)
+      exit_now! "Input file does not appear to be where you think it is." unless File.exist?(path)
       IO.read(path).each_line {|l|
         next if l =~ /^\s*#/
         if l =~ /^(?:[\s\d])*(?:\|\s*)?(\S.*?)$/
@@ -598,7 +598,7 @@ command :tag do |c|
       end
     end
     args.each {|file|
-      if File.exists?(File.expand_path(file))
+      if File.exist?(File.expand_path(file))
         input = IO.read(File.expand_path(file))
         suggestions = @jt.suggest(input)
 

@@ -64,7 +64,7 @@ class JTag
   end
 
   def synonyms
-    if File.exists?(File.join(@support,"synonyms.yml"))
+    if File.exist?(File.join(@support,"synonyms.yml"))
       syn = YAML::load(File.open(File.join(@support,"synonyms.yml")))
       compiled = {}
       syn.each {|k,v|
@@ -193,7 +193,7 @@ class JTag
 
   def update_file_tags(file, tags, piped = false)
     begin
-      if File.exists?(file) || piped
+      if File.exist?(file) || piped
         yaml, after = split_post(file, piped)
         yaml[@tags_key] = tags
         if piped
