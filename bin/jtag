@@ -1,11 +1,12 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-require 'gli'
-require 'jtag'
+require "gli"
+require "jtag"
+require "fcntl"
 
 include GLI::App
 
-program_desc 'Autotagging for Jekyll'
+program_desc "Autotagging for Jekyll"
 
 version Jtag::VERSION
 
@@ -20,15 +21,24 @@ def config_files_complete?
   true
 end
 
-desc 'Debug level'
-default_value '0'
-arg_name 'debug_level'
+class ::String
+  def file_list?
+    self.strip.split("\n").each do |line|
+      return false unless File.exist?(line)
+    end
+    true
+  end
+end
+
+desc "Debug level"
+default_value "0"
+arg_name "debug_level"
 flag %i[d debug], :must_match => /\d+/, :type => Integer, :default_value => 0
 
-desc 'Run silently'
+desc "Run silently"
 switch %i[s silent]
 
-desc 'Perform case-insensitive matches and searches'
+desc "Perform case-insensitive matches and searches"
 switch %i[i case_insensitive]
 
 desc "Test (dry run, don't update files)"
@@ -36,7 +46,7 @@ long_desc "Run all commands and show results on the command line, but don't over
 default_value false
 switch %i[t test]
 
-def console_log(msg="", options={})
+def console_log(msg = "", options = {})
   err = options[:err] || false
   options[:log] ||= false
 
@@ -57,13 +67,13 @@ def console_log(msg="", options={})
   end
 end
 
-desc 'Update and notify user of configuration files location'
+desc "Update and notify user of configuration files location"
 command :config do |c|
-  c.desc 'Reset all configuration files to default values'
-  c.switch [:r,'reset']
+  c.desc "Reset all configuration files to default values"
+  c.switch [:r, "reset"]
 
   c.skips_pre
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
     if options[:r]
       print "Are you sure you want to reset all config files? y/N: "
       response = STDIN.gets.strip
@@ -77,24 +87,22 @@ command :config do |c|
   end
 end
 
-def write_config(atomic=false)
-  gem_root = Gem.loaded_specs['jtag'].full_gem_path
-  gem_lib = File.join(gem_root, 'lib')
-  config_source = File.join(gem_lib,'/jtag/config_files')
-
-
+def write_config(atomic = false)
+  gem_root = Gem.loaded_specs["jtag"].full_gem_path
+  gem_lib = File.join(gem_root, "lib")
+  config_source = File.join(gem_lib, "/jtag/config_files")
 
   unless File.directory?(@config_target) || atomic
-    FileUtils.cp_r(config_source,@config_target)
+    FileUtils.cp_r(config_source, @config_target)
     console_log "Configuration files are located in the folder: " + @config_target
     console_log %Q{Make sure that "tags_location" in config.yml is set to your tags.json url.}
     console_log "Configuration files written to #{@config_target}"
   end
 
   @config_files.each do |file|
-    unless File.exist?(File.join(@config_target,file))
-      source_file = File.join(config_source,file)
-      target_file = File.join(@config_target,file)
+    unless File.exist?(File.join(@config_target, file))
+      source_file = File.join(config_source, file)
+      target_file = File.join(@config_target, file)
       FileUtils.cp(source_file, target_file)
       console_log "Config file #{file} added."
     end
@@ -104,66 +112,66 @@ def write_config(atomic=false)
   console_log %Q{Make sure that "tags_location" in the config.yml file is set to your tags json file.}
 end
 
-desc 'List tags, optionally filter for keywords/regular expressions (OR)'
-long_desc 'This command can be used to find the exact format for a given tag to keep spaces, underscores, capitalization and pluralization consistent'
-arg_name 'keyword', :multiple
+desc "List tags, optionally filter for keywords/regular expressions (OR)"
+long_desc "This command can be used to find the exact format for a given tag to keep spaces, underscores, capitalization and pluralization consistent"
+arg_name "keyword", :multiple
 command :search do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
-  c.arg_name 'output_format'
-  c.default_value 'yaml'
+  c.desc "Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml."
+  c.arg_name "output_format"
+  c.default_value "yaml"
   c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/i, :type => String
 
-  c.desc 'Include tag counts'
-  c.arg_name 'counts'
+  c.desc "Include tag counts"
+  c.arg_name "counts"
   c.default_value false
   c.switch %i[c counts]
 
-  c.action do |global_options,options,args|
-    tags = @jt.get_tags({:counts => true})
+  c.action do |global_options, options, args|
+    tags = @jt.get_tags({ :counts => true })
     if args.length > 0
       re = args.join("|")
-      tags.delete_if {|tag|
-        if tag && tag['name'] =~ /(#{re})/i
+      tags.delete_if { |tag|
+        if tag && tag["name"] =~ /(#{re})/i
           false
         else
           true
         end
       }
       if options[:c]
-        tags.map! {|tag| "#{tag['name']} (#{tag['count']})" }
+        tags.map! { |tag| "#{tag["name"]} (#{tag["count"]})" }
       else
-        tags.map! {|tag| tag['name'] }
+        tags.map! { |tag| tag["name"] }
       end
-      output_tags(tags,{ :format => options[:format] })
+      output_tags(tags, { :format => options[:format] })
     else
-      tags.delete_if {|tag| !tag }
+      tags.delete_if { |tag| !tag }
       if options[:c]
-        tags.map! {|tag| "#{tag['name']} (#{tag['count']})" }
+        tags.map! { |tag| "#{tag["name"]} (#{tag["count"]})" }
       else
-        tags.map! {|tag| tag['name'] }
+        tags.map! { |tag| tag["name"] }
       end
-      output_tags(tags,{ :format => options[:format] })
+      output_tags(tags, { :format => options[:format] })
     end
   end
 end
 
-desc 'List posts with tag(s)'
-arg_name 'tags', :multiple
+desc "List posts with tag(s)"
+arg_name "tags", :multiple
 command :posts_tagged do |c|
-  c.desc 'Boolean operator for multiple tags (AND/OR/NOT)'
-  c.arg_name 'bool'
-  c.default_value 'OR'
+  c.desc "Boolean operator for multiple tags (AND/OR/NOT)"
+  c.arg_name "bool"
+  c.default_value "OR"
   c.flag %i[b bool], :must_match => /(AND|OR|NOT)/i, :type => String
 
-  c.desc 'Format to use when outputting file list: list, json, plist, csv or yaml. Defaults to list.'
-  c.arg_name 'output_format'
-  c.default_value 'list'
+  c.desc "Format to use when outputting file list: list, json, plist, csv or yaml. Defaults to list."
+  c.arg_name "output_format"
+  c.default_value "list"
   c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
-  c.desc 'If output format is list, print without newlines.'
+  c.desc "If output format is list, print without newlines."
   c.switch [:print0]
 
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
     bool = options[:bool].upcase
     files = []
     tags = []
@@ -176,30 +184,33 @@ command :posts_tagged do |c|
         tags.push(arg)
       end
     end
+
+    files.concat(@piped_content.split("\n")) if @piped_content
+
     if files.empty?
       if @jt.default_post_location && File.exist?(File.dirname(@jt.default_post_location))
         files = Dir.glob(@jt.default_post_location)
       end
     end
     exit_now! "No valid filename in arguments" if files.empty?
-    files.each {|file|
+    files.each { |file|
       if File.exist?(file)
         post_tags = @jt.post_tags(file)
 
         if bool == "AND"
           matched = 0
-          tags.each {|tag|
+          tags.each { |tag|
             matched += 1 if post_tags.include?(tag)
           }
           matches.push(file) if matched == tags.length
         elsif bool == "NOT"
           matched = false
-          tags.each {|tag|
+          tags.each { |tag|
             matched = true if post_tags.include?(tag)
           }
           matches.push(file) unless matched
         else
-          tags.each {|tag|
+          tags.each { |tag|
             if post_tags.include?(tag)
               matches.push(file) unless matches.include?(file)
             end
@@ -214,23 +225,23 @@ command :posts_tagged do |c|
     if matches.empty?
       console_log "No matching files found for #{search_string}"
     else
-      console_log "(#{search_string})", {:err => true}
+      console_log "(#{search_string})", { :err => true }
       output_tags(matches, { :format => options[:format], :print0 => options[:print0], :grouping => "files" })
     end
   end
 end
 
-desc 'Show tags with fewer than X posts attached to them, optionally removing them from specified posts'
-arg_name 'file_pattern', :multiple
+desc "Show tags with fewer than X posts attached to them, optionally removing them from specified posts"
+arg_name "file_pattern", :multiple
 command :loners do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
-  c.arg_name 'output_format'
-  c.default_value 'yaml'
+  c.desc "Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml."
+  c.arg_name "output_format"
+  c.default_value "yaml"
   c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
-  c.desc 'Upper limit for how many posts a tag can be attached to and still be a loner'
-  c.arg_name 'max'
-  c.default_value '2'
+  c.desc "Upper limit for how many posts a tag can be attached to and still be a loner"
+  c.arg_name "max"
+  c.default_value "2"
   c.flag %i[m max], :default_value => 2, :must_match => /^\d+$/
 
   c.desc "Remove tags with fewer than X posts attached"
@@ -239,17 +250,17 @@ command :loners do |c|
   c.desc "Display output without attached occurence counts"
   c.switch [:no_counts], :default_value => false
 
-  c.desc 'Output a file list of tags that can be edited and passed back in for removing'
-  c.arg_name 'filename'
+  c.desc "Output a file list of tags that can be edited and passed back in for removing"
+  c.arg_name "filename"
   c.flag %i[e edit], :default_value => false, :type => String
 
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
     max = options[:m].to_i
-    loner_tags = @jt.get_tags({:counts => true})
+    loner_tags = @jt.get_tags({ :counts => true })
     loner_tags.delete_if { |tag|
-      tag.class == FalseClass || tag['count'] > max
+      tag.class == FalseClass || tag["count"] > max
     }
-    loner_tags.sort_by! {|tag| tag['count']}
+    loner_tags.sort_by! { |tag| tag["count"] }
 
     exit_now! "No tags matched the criteria" if loner_tags.empty? || loner_tags.nil?
 
@@ -261,10 +272,10 @@ command :loners do |c|
             $1.next! + $2
           end
         else
-          path.sub!(/(\.[^\.]+?)?$/,'01\1')
+          path.sub!(/(\.[^\.]+?)?$/, '01\1')
         end
       end
-      File.open(path, 'w+') do |f|
+      File.open(path, "w+") do |f|
         f.puts "# Edit this file to remove tags you want to keep,"
         f.puts "# then run `jtag remove -p '#{path}' [/path/to/posts/*.md]`"
         f.puts "# to remove any tags left in the file."
@@ -273,18 +284,18 @@ command :loners do |c|
         f.puts "# be automatically ignored when reading the list back in."
         f.puts "#"
         f.puts "# Lines beginning with a # are comments (ignored), but you probably figured that out."
-        loner_tags.each{ |t|
-          f.printf "% 3d |\t%s\n", t['count'], t['name']
+        loner_tags.each { |t|
+          f.printf "% 3d |\t%s\n", t["count"], t["name"]
         }
       end
 
       console_log "A list of results and instructions for use have been written to #{path}."
-      if ENV['EDITOR']
+      if ENV["EDITOR"]
         console_log
-        print "Would you like to open the file in #{ENV['EDITOR']} now? (y/N) "
+        print "Would you like to open the file in #{ENV["EDITOR"]} now? (y/N) "
         input = STDIN.gets
         if input =~ /^y/i
-          system "#{ENV['EDITOR']} '#{path}'"
+          system "#{ENV["EDITOR"]} '#{path}'"
         end
       end
     elsif options[:r]
@@ -293,13 +304,16 @@ command :loners do |c|
         arg = args.pop
         files.push(arg) if File.exist?(arg)
       end
+
+      files.concat(@piped_content.split("\n")) if @piped_content
+
       if files.empty?
         if @jt.default_post_location && File.exist?(File.dirname(@jt.default_post_location))
           files = Dir.glob(@jt.default_post_location)
         end
       end
       exit_now! "No valid filename in arguments" if files.empty?
-      files.each {|file|
+      files.each { |file|
         tags = @jt.post_tags(file)
         loner_tags.each { |d|
           tags.delete_if { |tag|
@@ -317,69 +331,76 @@ command :loners do |c|
 
         console_log
         console_log File.basename(file) + ":"
-        output_tags(tags, :format => options[:format], :filename => file )
+        output_tags(tags, :format => options[:format], :filename => file)
       }
     else
-      output_tags(loner_tags.map{|tag|
-        count = options[:no_counts] ? "" : " (#{tag['count']})"
-        "#{tag['name']}#{count}"}, :format => options[:format] )
+      output_tags(loner_tags.map { |tag|
+        count = options[:no_counts] ? "" : " (#{tag["count"]})"
+        "#{tag["name"]}#{count}"
+      }, :format => options[:format])
     end
   end
 end
 
-
-desc 'Show the current tags for posts'
-arg_name 'file_pattern', :multiple
+desc "Show the current tags for posts"
+arg_name "file_pattern", :multiple
 command :tags do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
-  c.arg_name 'output_format'
-  c.default_value 'yaml'
+  c.desc "Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml."
+  c.arg_name "output_format"
+  c.default_value "yaml"
   c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
-  c.action do |global_options,options,args|
-
-    if @piped_content
-      tags = @jt.post_tags(@piped_content, true)
-      if args.length > 1
-        console_log
-        console_log 'STDIN:'
-      end
-      if tags.empty? || tags.nil?
-        console_log "No tags in post", {:err => true}
-      else
-        output_tags(tags,{ :format => options[:format] })
+  c.action do |global_options, options, args|
+    files = []
+    args.length.times do
+      arg = args.pop
+      if File.exist?(arg)
+        files.push(arg)
       end
     end
-    args.each{|file|
-      if File.exist?(file)
-        tags = @jt.post_tags(file)
-        if args.length > 1
-          console_log
-          console_log File.basename(file) + ":"
-        end
-        if tags.empty? || tags.nil?
-          console_log "No tags in post", {:err => true}
-        else
-          output_tags(tags,{ :format => options[:format], :filename => file })
-        end
-      else
-        raise "File not found: #{file}"
+
+    files.concat(@piped_content.split("\n")) if @piped_content && @piped_content.file_list?
+
+    tags = []
+    files.each do |file|
+      tags.concat(@jt.post_tags(file)) if File.exist?(file)
+
+      if args.length > 0
+        console_log
+        console_log "STDIN:"
       end
-    }
+    end
+
+    if tags.empty? || tags.nil?
+      console_log "No tags in post", { :err => true }
+    else
+      tags.sort!
+      tags.uniq!
+      output_tags(tags, { :format => options[:format] })
+    end
   end
 end
 
-
-desc 'Sort the existing tags for posts'
-arg_name 'file_pattern', :multiple
+desc "Sort the existing tags for posts"
+arg_name "file_pattern", :multiple
 command :sort do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
-  c.arg_name 'output_format'
-  c.default_value 'yaml'
+  c.desc "Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml."
+  c.arg_name "output_format"
+  c.default_value "yaml"
   c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
-  c.action do |global_options,options,args|
-    args.each{|file|
+  c.action do |global_options, options, args|
+    files = []
+    args.length.times do
+      arg = args.pop
+      if File.exist?(arg)
+        files.push(arg)
+      end
+    end
+
+    files.concat(@piped_content.split("\n")) if @piped_content
+
+    files.each do |file|
       tags = @jt.post_tags(file)
       tags.uniq!
       tags.sort!
@@ -390,21 +411,21 @@ command :sort do |c|
       console_log File.basename(file) + ":"
 
       if tags.empty? || tags.nil?
-        console_log "No tags in post", {:err => true}
+        console_log "No tags in post", { :err => true }
       else
-        output_tags(tags,{ :format => options[:format], :filename => file })
+        output_tags(tags, { :format => options[:format], :filename => file })
       end
-    }
+    end
   end
 end
 
-desc 'Merge multiple tags into one'
-long_desc 'Scans the specified posts for any of the tags, merging any found into the last one in the list'
-arg_name 'tags to merge merge_tag'
+desc "Merge multiple tags into one"
+long_desc "Scans the specified posts for any of the tags, merging any found into the last one in the list"
+arg_name "tags to merge merge_tag"
 command :merge do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
-  c.arg_name 'output_format'
-  c.default_value 'yaml'
+  c.desc "Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml."
+  c.arg_name "output_format"
+  c.default_value "yaml"
   c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
   c.action do |global_options, options, args|
@@ -418,6 +439,9 @@ command :merge do |c|
         tags.push(arg)
       end
     end
+
+    files.concat(@piped_content.split("\n")) if @piped_content
+
     if files.empty?
       if @jt.default_post_location && File.exist?(File.dirname(@jt.default_post_location))
         files = Dir.glob(@jt.default_post_location)
@@ -428,8 +452,8 @@ command :merge do |c|
     tags.reverse!
     merge_tag = tags.pop
     console_log %Q{Merging #{tags.join(", ")} to #{merge_tag}}
-    files.each {|file|
-      new_tags = @jt.merge_tags(tags,merge_tag,file)
+    files.each { |file|
+      new_tags = @jt.merge_tags(tags, merge_tag, file)
       next unless new_tags
       unless global_options[:t]
         @jt.update_file_tags(file, new_tags)
@@ -439,20 +463,18 @@ command :merge do |c|
 
       console_log
       console_log File.basename(file) + ":"
-      output_tags(new_tags,{ :format => options[:format], :filename => file })
-
+      output_tags(new_tags, { :format => options[:format], :filename => file })
     }
   end
 end
 
-
-desc 'Blacklist a specific tag'
-arg_name 'tag [tag2...]'
+desc "Blacklist a specific tag"
+arg_name "tag [tag2...]"
 command :blacklist do |c|
   c.desc "Remove (unblacklist) the arguments"
-  c.switch [:r,'remove']
+  c.switch [:r, "remove"]
 
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
     if options[:r]
       @jt.unblacklist(args)
       console_log "Removed #{args.join(", ")} from blacklist."
@@ -463,17 +485,16 @@ command :blacklist do |c|
   end
 end
 
-desc 'Add tags to post(s)'
-arg_name 'tags', :multiple
-arg_name 'file_pattern'
+desc "Add tags to post(s)"
+arg_name "tags", :multiple
+arg_name "file_pattern"
 command :add do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
-  c.arg_name 'output_format'
-  c.default_value 'yaml'
+  c.desc "Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml."
+  c.arg_name "output_format"
+  c.default_value "yaml"
   c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
-
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
     files = []
     new_tags = []
     args.length.times do
@@ -484,6 +505,9 @@ command :add do |c|
         new_tags.push(arg)
       end
     end
+
+    files.concat(@piped_content.split("\n")) if @piped_content
+
     if files.empty?
       if @jt.default_post_location && File.exist?(File.dirname(@jt.default_post_location))
         files = Dir.glob(@jt.default_post_location)
@@ -492,7 +516,7 @@ command :add do |c|
     exit_now! "No valid filename in arguments" if files.empty?
     exit_now! "No tags found in arguments" if new_tags.empty?
 
-    files.each {|file|
+    files.each { |file|
       tags = @jt.post_tags(file)
       tags.concat(new_tags)
       tags.uniq!
@@ -509,20 +533,20 @@ command :add do |c|
   end
 end
 
-desc 'Remove tags from post(s)'
-arg_name 'tags', :multiple
+desc "Remove tags from post(s)"
+arg_name "tags", :multiple
 command :remove do |c|
-  c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml.'
-  c.arg_name 'output_format'
-  c.default_value 'yaml'
+  c.desc "Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml."
+  c.arg_name "output_format"
+  c.default_value "yaml"
   c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
 
-  c.desc 'A filepath to a list of tags to be removed'
-  c.long_desc 'One tag per line, and leading numbers and pipes (|) will be ignored. This file format is generated automatically by the `loners` command, but any text file will do the trick.'
-  c.arg_name 'input_file'
+  c.desc "A filepath to a list of tags to be removed"
+  c.long_desc "One tag per line, and leading numbers and pipes (|) will be ignored. This file format is generated automatically by the `loners` command, but any text file will do the trick."
+  c.arg_name "input_file"
   c.flag %i[p path], :type => String
 
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
     files = []
     remove_tags = []
     args.length.times do
@@ -533,6 +557,9 @@ command :remove do |c|
         remove_tags.push(arg) unless options[:p]
       end
     end
+
+    files.concat(@piped_content.split("\n")) if @piped_content
+
     if files.empty?
       if @jt.default_post_location && File.exist?(File.dirname(@jt.default_post_location))
         files = Dir.glob(@jt.default_post_location)
@@ -543,7 +570,7 @@ command :remove do |c|
     if options[:p]
       path = File.expand_path(options[:p])
       exit_now! "Input file does not appear to be where you think it is." unless File.exist?(path)
-      IO.read(path).each_line {|l|
+      IO.read(path).each_line { |l|
         next if l =~ /^\s*#/
         if l =~ /^(?:[\s\d])*(?:\|\s*)?(\S.*?)$/
           remove_tags.push($1.strip)
@@ -554,7 +581,7 @@ command :remove do |c|
 
     exit_now! "No tags found in input, my work here is done" if remove_tags.empty?
 
-    files.each {|file|
+    files.each { |file|
       tags = @jt.post_tags(file)
       remove_tags.each { |d|
         tags.delete_if { |tag|
@@ -572,32 +599,41 @@ command :remove do |c|
 
       console_log
       console_log File.basename(file) + ":"
-      output_tags(tags,{ :format => options[:format], :filename => file })
+      output_tags(tags, { :format => options[:format], :filename => file })
     }
   end
 end
 
-desc 'Generate a list of recommended tags, optionally updating the file'
-arg_name 'file_pattern', :multiple
+desc "Generate a list of recommended tags, updating the file (unless dry run)"
+arg_name "file_pattern", :multiple
 command :tag do |c|
   c.desc 'Format to use when outputting tags to console: list, json, plist, csv or yaml. Use "complete" to output full text when input is STDIN.'
-  c.arg_name 'output_format'
-  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist|complete)$/, :type => String, :default_value => 'yaml'
+  c.arg_name "output_format"
+  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist|complete)$/, :type => String, :default_value => "yaml"
 
   c.action do |global_options, options, args|
-    if @piped_content
+    if @piped_content && !@piped_content.file_list?
       suggestions = @jt.suggest(@piped_content)
       if args.length > 0
         console_log
-        console_log 'STDIN:', :err => true
+        console_log "STDIN:", :err => true
       end
-      if options[:format] == 'complete'
+      if options[:format] == "complete"
         @jt.update_file_tags(@piped_content, suggestions, true)
       else
         output_tags(suggestions, :format => options[:format], :filename => nil)
       end
     end
-    args.each {|file|
+
+    files = []
+    args.length.times do
+      arg = args.pop
+      files.push(arg) if File.exist?(arg)
+    end
+
+    files.concat(@piped_content.split("\n")) if @piped_content && @piped_content.file_list?
+
+    files.each do |file|
       if File.exist?(File.expand_path(file))
         input = IO.read(File.expand_path(file))
         suggestions = @jt.suggest(input)
@@ -616,26 +652,26 @@ command :tag do |c|
             console_log
             console_log File.basename(file) + ":", :err => true, :log => true
           end
-          output_tags(suggestions, :format => options[:format], :filename => file )
+          output_tags(suggestions, :format => options[:format], :filename => file)
         end
         suggestions = nil
       else
         raise "No such file: #{file}"
       end
-    }
+    end
   end
 end
 
-def output_tags(tags,options)
-  format = options[:format] || 'yaml'
+def output_tags(tags, options)
+  format = options[:format] || "yaml"
   print0 = options[:print0] || false
   filename = options[:filename] || false
   case format
-  when 'list'
+  when "list"
     unless print0
       console_log tags.join("\n")
     else
-      console_log tags.map {|tag|
+      console_log tags.map { |tag|
         if tag.strip =~ /\b\s\b/
           %Q{"#{tag.strip}"}
         else
@@ -643,19 +679,19 @@ def output_tags(tags,options)
         end
       }.join(" ")
     end
-  when 'csv'
+  when "csv"
     console_log tags.to_csv
-  when 'json'
+  when "json"
     out = {}
-    out['tags'] = tags
-    out['path'] = filename if filename
+    out["tags"] = tags
+    out["path"] = filename if filename
     console_log out.to_json
-  when 'plist'
+  when "plist"
     out = {}
-    out['path'] = filename if filename
+    out["path"] = filename if filename
     console_log tags.to_plist
   else
-     out = {}
+    out = {}
     options[:grouping] ||= "tags"
     out[options[:grouping]] = tags
     console_log out.to_yaml
@@ -677,29 +713,31 @@ pre do |global, command, options, args|
   # on that command only
   @silent = global[:silent]
 
-  @logfile = File.open(File.join(Dir.tmpdir, "jtag_actions.log"), 'a')
+  Signal.trap("PIPE", "EXIT")
+
+  @logfile = File.open(File.join(Dir.tmpdir, "jtag_actions.log"), "a")
 
   @log = Logger.new(@logfile, shift_age = 7, shift_size = 1048576)
 
   unless config_files_complete?
     write_config
-    console_log "Missing config files written to #{@config_target}. Please check your configuration.", {:err => true}
+    console_log "Missing config files written to #{@config_target}. Please check your configuration.", { :err => true }
     return false
   end
 
   configfile = File.expand_path("~/.jtag/config.yml")
 
-  global[:config] = YAML::load(File.open(configfile,"r"))
+  global[:config] = YAML::load(File.open(configfile, "r"))
   global[:support] = File.expand_path("~/.jtag")
 
-  @piped_content = STDIN.stat.size > 0 ? STDIN.read : nil
+  @piped_content = $stdin.read if $stdin.fcntl(Fcntl::F_GETFL, 0) == 0 || $stdin.stat.pipe?
 
   @jt = JTag.new(global[:support], global[:config])
 
   true
 end
 
-post do |global,command,options,args|
+post do |global, command, options, args|
   # Post logic here
   # Use skips_post before a command to skip this
   # block on that command only
