@@ -1,3 +1,3 @@
 module Jtag
-  VERSION = '0.1.14'
+  VERSION = '0.1.19'
 end
