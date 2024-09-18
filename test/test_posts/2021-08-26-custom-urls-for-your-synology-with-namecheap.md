@@ -3,7 +3,7 @@ layout: post
 title: Custom URLs for your Synology with Namecheap
 categories:
 - Code
-tags: []
+tags: [bollocks, beans]
 comments: true
 post_class: code
 keywords:

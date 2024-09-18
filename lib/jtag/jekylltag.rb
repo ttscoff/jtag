@@ -3,23 +3,28 @@
 module JekyllTag
   class JTag
     attr_reader :default_post_location
+    attr_reader :tags_loc
     attr_reader :post_extension
     attr_accessor :tags_key
 
-    def initialize(support_dir, config)
+    def initialize(support_dir, config, options = {})
+      config = config.symbolize_keys
       @support = support_dir
       @util = JekyllTag::Util.new
       begin
-        if config[:tags_location].to_s =~ /^(auto|posts?)$/
+        if options[:files]
+          @tags_loc = :auto
+          files = options[:files].map(&:File.expand_path)
+        elsif config[:tags_location].to_s =~ /^(auto|posts?)$/
           @tags_loc = :auto
           files = Dir.glob(File.expand_path(File.join(config[:default_post_location], "**", "*.#{config[:post_extension]}")))
         else
           @tags_loc = File.expand_path(config[:tags_location])
           @tags_loc.sub!(/^https?:\/\//, "")
-          file = nil
+          files = nil
         end
-      rescue StandardError
-        raise InvalidTagsFile, "Error reading configured tags location"
+      rescue StandardError => e
+        raise InvalidTagsFile, "Error reading configured tags locatio (#{e})"
       end
       @min_matches = config[:min_matches] || 2
       @post_extension = config[:post_extension] || "md"
@@ -52,20 +57,21 @@ module JekyllTag
     def tags(options = {})
       blacklisted = options[:blacklisted] || false
       counts = options[:counts] || false
-      if @tags_loc == :auto && options[:files]
+      if options[:files]
         tags = {}
+        tag_counts = {}
         options[:files].each do |file|
-          tags["tags_count"] ||= []
           tags["tags"] ||= []
 
-          file_tags = post_tags(file)
+          file_tags = post_tags(File.expand_path(file))
           file_tags.each do |tag|
-            tags["tags_count"][tag] ||= 0
-            tags["tags_count"][tag] += 1
+            tag_counts[tag] ||= 0
+            tag_counts[tag] += 1
             tags["tags"].push(tag)
           end
         end
-        tags["tags_count"].map! { |k, v| { "name" => k, "count" => v } }
+        tags["tags_count"] = []
+        tag_counts.each { |k, v| tags["tags_count"] << { "name" => k, "count" => v } }
       elsif File.exist?(@tags_loc)
         begin
           tags = YAML.load_file(@tags_loc)
@@ -132,7 +138,7 @@ module JekyllTag
 
     def post_tags(file, piped = false)
       begin
-        input = piped ? file.strip : IO.read(file)
+        input = piped ? file.strip : IO.read(File.expand_path(file))
         yaml = YAML::load(input)
         return yaml[@tags_key] || []
       rescue

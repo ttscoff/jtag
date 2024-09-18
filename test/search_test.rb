@@ -1,43 +1,58 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
 
-require 'minitest/autorun'
-require 'open3'
+require "minitest/autorun"
+require "open3"
+
+require "test_helper"
 
 class TestJtagSearch < Minitest::Test
-  JTAG_BIN = File.expand_path('../bin/jtag', __dir__)
-
-  def test_files_command
-    # Test with no arguments
-    stdout, stderr, status = Open3.capture3(JTAG_BIN, 'search', 'test')
+  def test_search_command
+    stdout, stderr, status = jtag("search", "product")
     assert_equal 0, status.exitstatus
-    assert_match /No valid filename in arguments/, stderr
-
-    # Test with a valid file
-    File.write('test_post.md', '---\ntags: [test]\n---\n')
-    stdout, stderr, status = Open3.capture3(JTAG_BIN, 'files', 'test_post.md')
-    assert_equal 0, status.exitstatus
-    assert_match /test_post.md/, stdout
-
-    # Clean up
-    File.delete('test_post.md')
+    assert_match /- productivity/, stdout
   end
 
-  def test_files_with_piped_content
-    # Test with piped content
-    File.write('test_post.md', '---\ntags: [test]\n---\n')
-    stdout, stderr, status = Open3.capture3("echo 'test_post.md' | #{JTAG_BIN} files")
+  def test_search_command_with_fuzzy_search
+    stdout, stderr, status = jtag("search", "-m", "fuzzy", "rn")
     assert_equal 0, status.exitstatus
-    assert_match /test_post.md/, stdout
-
-    # Clean up
-    File.delete('test_post.md')
+    assert_match /- conference/, stdout
   end
 
-  def test_files_with_invalid_file
-    # Test with an invalid file
-    stdout, stderr, status = Open3.capture3(JTAG_BIN, 'files', 'non_existent_file.md')
+  def test_search_command_with_exact_search
+    stdout, stderr, status = jtag("search", "-m", "exact", "productivity")
+    assert_equal 0, status.exitstatus
+    assert_match /- productivity/, stdout
+  end
+
+  def test_search_command_with_case_sensitive_search
+    stdout, stderr, status = jtag("search", "-I", "Product")
     assert_equal 1, status.exitstatus
-    assert_match /File not found: non_existent_file.md/, stderr
+    assert_match /No matching/, stderr
+  end
+
+  def test_search_command_with_piped_filename
+    # Test with piped filename
+    File.open("test_post.md", "w") { |f| f.puts("---\ntags: [test]\n---\n") }
+    stdout, stderr, status = jtag("search", stdin: "test_post.md")
+    assert_equal 0, status.exitstatus
+    assert_match /- test/, stdout
+
+    # Clean up
+    FileUtils.rm("test_post.md")
+  end
+
+  def test_search_with_piped_content
+    # Test with piped content
+    stdout, stderr, status = jtag("search", stdin: "---\ntags: [test]\n---\n")
+    assert_equal 0, status.exitstatus
+    assert_match /- test/, stdout
+  end
+
+  def test_search_with_invalid_file
+    # Test with an invalid file
+    stdout, stderr, status = jtag("search", "invalid_file.md")
+    assert_equal 1, status.exitstatus
+    assert_match /No matching tags/, stderr
   end
 end

@@ -12,6 +12,7 @@ module JekyllTag
       :error => 0,
       :warn => 1,
       :info => 2,
+      :debug => 3,
     }
 
     CONFIG_FILES = %w{blacklist.txt config.yml stopwords.txt synonyms.yml}
@@ -32,7 +33,7 @@ module JekyllTag
     ##
     def output_tags(tags, options)
       # Determine the format for output, defaulting to "yaml" if not specified
-      format = options[:format] || "yaml"
+      format = options[:format]&.to_format || :yaml
       # Determine if tags should be printed with a null delimiter
       print0 = options[:print0] || false
       # Determine the filename for output, if specified
@@ -97,11 +98,13 @@ module JekyllTag
     ## 0 = error
     ## 1 = warn
     ## 2 = info
+    ## 3 = debug
     ##
     ### Debug levels
     ## 1 = errors only
     ## 2 = errors and warnings
     ## 3 = errors, warnings and info
+    ## 4 = errors, warnings, info and debug
     ##
     ### Test level < debug level (true = return, false = continue)
     ## true = continue
@@ -112,6 +115,8 @@ module JekyllTag
     ## send error (0) and debug is errors and warnings (2) (0 < 2 = continue)
     ## send warning (1) and debug is errors only (1) (1 < 1 = return)
     ## send error (0) and debug level is silent (0) (0 < 0 = return)
+    ## send debug (3) and debug level is info (3) (3 < 4 = return)
+    ## send debug (3) and debug level is debug (4) (3 < 4 = continue)
     ##
     ## @example Log an info message
     ##   console_log("This is an info message", level: :info)
@@ -122,7 +127,7 @@ module JekyllTag
     ## @param msg [String] message to log
     ## @param options [Hash] hash of options
     ##
-    ## @option options :level [Symbol] level of message (info, warn, error)
+    ## @option options :level [Symbol] level of message (info, warn, error, debug)
     ## @option options :err [Boolean] print to STDERR
     ## @option options :log [Boolean] write to log file
     ## @option options :filename [String] write to file
@@ -171,25 +176,23 @@ module JekyllTag
     ##
     def write_config(atomic = false)
       # Get the root path of the gem
-      gem_root = Gem.loaded_specs["jtag"].full_gem_path
+      jtag_gem = Gem.loaded_specs["jtag"]
+      gem_root = jtag_gem.full_gem_path || File.expand_path("../../", __dir__)
       # Get the lib directory within the gem
       gem_lib = File.join(gem_root, "lib")
       # Define the source directory for the configuration files
       config_source = File.join(gem_lib, "/jtag/config_files/")
 
+      FileUtils.rm_rf(@config_target) if File.directory?(@config_target) && atomic
+
       # If the config target directory does not exist or atomic is true, copy the config files
-      unless File.directory?(@config_target) || atomic
+      if !File.directory?(@config_target)
         # Ensure the target directory exists
         FileUtils.mkdir_p(@config_target)
         CONFIG_FILES.each do |file|
           FileUtils.cp(File.join(config_source, file), @config_target)
         end
-        # Ouput the location of the configuration files
-        console_log "Configuration files are located in the folder: " + @config_target
-        # Ouput a reminder to set the tags_location in config.yml
-        console_log %Q{Make sure that "tags_location" in config.yml is set to your tags.json url.}
-        # Output that the configuration files have been written
-        console_log "Configuration files written to #{@config_target}"
+        # console_log "Configuration files written to #{@config_target}", level: :warn
       end
 
       # Iterate over each config file

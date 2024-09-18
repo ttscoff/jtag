@@ -44,6 +44,9 @@ command :config do |c|
   c.desc "Reset all configuration files to default values"
   c.switch %i[r reset]
 
+  c.desc "Ignore prompts and answer yes to all questions."
+  c.switch %i[y yes], negatable: false
+
   c.desc "Set a specific configuration value"
   c.arg_name "key"
   c.flag %i[s set]
@@ -66,11 +69,17 @@ command :config do |c|
       return
     end
 
-    if options[:r]
+    if options[:reset]
       # Prompt the user for confirmation before resetting config files
-      print "Are you sure you want to reset all config files? y/N: "
-      response = STDIN.gets.strip
-      if response =~ /^y/i
+      if options[:yes]
+        res = true
+      else
+        print "Are you sure you want to reset all config files? y/N: "
+        response = STDIN.gets.strip
+        res = response =~ /^y/i
+      end
+
+      if res
         # Reset config files to default values
         @util.write_config(true)
         @util.console_log "Config files reset"
@@ -135,16 +144,20 @@ command :search do |c|
 
     # If no files are provided, use the default post location
     if files.empty?
-      if @jt.default_post_location && File.exist?(@jt.default_post_location)
-        # Retrieves a list of files from the default post location with the specified post extension.
-        # The files are located using a glob pattern that matches all files with the given extension.
-        #
-        # @return [Array<String>] an array of file paths matching the specified pattern
-        files = Dir.glob(File.join(@jt.default_post_location, "*.#{@jt.post_extension}"))
+      if File.exist?(File.expand_path(@jt.tags_loc))
+        files = nil
+      else
+        if @jt.default_post_location && File.exist?(File.expand_path(@jt.default_post_location))
+          # Retrieves a list of files from the default post location with the specified post extension.
+          # The files are located using a glob pattern that matches all files with the given extension.
+          #
+          # @return [Array<String>] an array of file paths matching the specified pattern
+          files = Dir.glob(File.join(File.expand_path(@jt.default_post_location), "**", "*.#{@jt.post_extension}"))
+        end
       end
+    else
+      tags = {}
     end
-
-    tags = {}
 
     # Get tags with counts for the specified files
     if @piped_content && !@piped_content.file_list?(global_options[:null])
@@ -161,7 +174,7 @@ command :search do |c|
       tags = @jt.tags({ :counts => true, :files => files })
     end
 
-    raise NoTagsFound, "No source tag list found" if tags.nil? || tags.empty?
+    exit_now! "No source tag list found" if !tags || tags.empty?
 
     match_options = {
       exact: false,
@@ -200,7 +213,7 @@ command :search do |c|
     # Remove nil and false values from the tags array
     tags.delete_if { |tag| !tag }
 
-    raise NoResults, "No matching tags found" if tags.nil? || tags.empty?
+    exit_now! "No matching tags found" if tags.nil? || tags.empty?
 
     # Format tags with counts if the counts option is enabled
     if options[:count]
@@ -597,10 +610,11 @@ end
 desc "Add tags to post(s)"
 arg_name "tags... file(s)", :multiple
 command :add do |c|
-  c.desc "Format to use when outputting tags to console: list, json, plist, csv or yaml. Defaults to yaml."
+  c.desc "Format to use when outputting tags to console: list, json, plist, csv, yaml, or complete. Defaults to yaml."
+  c.long_desc "Use 'complete' to output full text when input is STDIN. First two letters of format are also accepted."
   c.arg_name "output_format"
   c.default_value "yaml"
-  c.flag %i[f format], :must_match => /^(csv|list|yaml|json|plist)$/, :type => String
+  c.flag %i[f format], :must_match => /^(csv?|l(?:i(?:st)?)?|y(?:a(?:ml)?)?|j(?:s(?:on)?)?|p(?:l(?:ist)?)?|co(?:mp(?:lete)?)?)$/, :type => String
 
   c.action do |global_options, options, args|
     files = []
@@ -616,28 +630,38 @@ command :add do |c|
 
     files.concat(@piped_content.split(global_options[:null] ? "\x00" : "\n")) if @piped_content && @piped_content.file_list?(global_options[:null])
 
-    if files.empty?
-      if @jt.default_post_location && File.exist?(@jt.default_post_location)
-        files = Dir.glob(File.join(@jt.default_post_location, "*.#{@jt.post_extension}"))
+    # if files.empty?
+    #   if @jt.default_post_location && File.exist?(@jt.default_post_location)
+    #     files = Dir.glob(File.join(@jt.default_post_location, "*.#{@jt.post_extension}"))
+    #   end
+    # end
+    # raise NoValidFile if files.empty?
+    raise NoTagsFound, "No tags to add specified" if new_tags.empty?
+
+    if @piped_content && !@piped_content.file_list?(global_options[:null])
+      tags = @jt.post_tags(@piped_content, true)
+      tags.concat(new_tags)
+      tags.sort!
+      tags.uniq!
+      @util.console_log "STDIN:", level: :debug
+      # TODO: Add debug level to console_log
+      @util.output_tags(tags, format: options[:format], content: @piped_content)
+    else
+      files.each do |file|
+        tags = @jt.post_tags(file)
+        tags.concat(new_tags)
+        tags.sort!
+        tags.uniq!
+        unless global_options[:t]
+          @jt.update_file_tags(file, tags)
+          @util.console_log "Updated tags for #{file}", log: true, level: :warn
+        end
+
+        @util.console_log level: :info
+        @util.console_log "#{File.basename(file)}:", level: :info
+        @util.output_tags(tags, :format => options[:format], :filename => file)
       end
     end
-    raise NoValidFile if files.empty?
-    raise NoTagsFound if new_tags.empty?
-
-    files.each { |file|
-      tags = @jt.post_tags(file)
-      tags.concat(new_tags)
-      tags.uniq!
-      tags.sort!
-      unless global_options[:t]
-        @jt.update_file_tags(file, tags)
-        @util.console_log "Updated tags for #{file}", log: true, level: :warn
-      end
-
-      @util.console_log level: :info
-      @util.console_log "#{File.basename(file)}:", level: :info
-      @util.output_tags(tags, :format => options[:format], :filename => file)
-    }
   end
 end
 

@@ -1,6 +1,6 @@
 ---
-tags_location: auto
+tags_location: ~/Desktop/Code/jtag/test/test_data/tags.json
 min_matches: 2
-default_post_location: ~/Sites/dev/bt/source/_posts/
+default_post_location: ~/Desktop/Code/jtag/test/test_posts/
 tags_key: tags
 post_extension: md
