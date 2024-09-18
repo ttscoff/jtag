@@ -1,13 +1,19 @@
-require 'net/http'
-require 'cgi'
-require 'fileutils'
-require 'yaml'
-require 'csv'
-require 'json'
-require 'plist'
-require 'jtag/version.rb'
-require 'jtag/string.rb'
-require 'jtag/porter_stemming.rb'
-require 'jtag/jekylltag.rb'
-require 'tmpdir'
-require 'logger'
+# frozen_string_literal: true
+
+require "net/http"
+require "cgi"
+require "fileutils"
+require "yaml"
+require "csv"
+require "json"
+require "plist"
+require "tmpdir"
+require "logger"
+require_relative "jtag/errors.rb"
+require_relative "jtag/array.rb"
+require_relative "jtag/hash.rb"
+require_relative "jtag/version.rb"
+require_relative "jtag/string.rb"
+require_relative "jtag/porter_stemming.rb"
+require_relative "jtag/jekylltag.rb"
+require_relative "jtag/util.rb"

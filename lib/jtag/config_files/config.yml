@@ -1,5 +1,6 @@
 ---
-tags_location: localhost/data/tags.json
+tags_location: auto
 min_matches: 2
-default_post_location:
+default_post_location: ~/Sites/dev/bt/source/_posts/
 tags_key: tags
+post_extension: md

@@ -1,0 +1,6 @@
+---
+tags_location: ~/Desktop/Code/jtag/test/test_data/tags.json
+min_matches: 2
+default_post_location: ~/Desktop/Code/jtag/test/test_data/posts/
+tags_key: tags
+post_extension: md
