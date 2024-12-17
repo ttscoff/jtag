@@ -43,9 +43,9 @@ end
 desc 'Install the gem in the current ruby'
 task :install, :all do |t, args|
   args.with_defaults(:all => false)
-  if args[:all] != FalseClass
-    sh "rvm all do gem install pkg/*.gem"
-    sh "sudo gem install pkg/*.gem"
+  if args[:all]
+    sh "~/scripts/ruby-all gem install pkg/*.gem"
+    # sh "sudo gem install pkg/*.gem"
   else
     sh "gem install pkg/*.gem"
   end
