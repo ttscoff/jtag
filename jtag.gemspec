@@ -1,5 +1,5 @@
 # Ensure we require the local version and not one we might have installed already
-require File.join([File.dirname(__FILE__), "lib", "jtag", "version.rb"])
+require "./lib/jtag/version"
 spec = Gem::Specification.new do |s|
   s.name = "jtag"
   s.version = Jtag::VERSION
