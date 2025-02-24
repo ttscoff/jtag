@@ -19,13 +19,18 @@ module JekyllTag
           @tags_loc = :auto
           files = Dir.glob(File.expand_path(File.join(config[:default_post_location], "**", "*.#{config[:post_extension]}")))
         else
-          @tags_loc = File.expand_path(config[:tags_location])
-          @tags_loc.sub!(/^https?:\/\//, "")
+          @tags_loc = config[:tags_location]
+          if File.exist?(File.expand_path(@tags_loc))
+            @tags_loc = File.expand_path(@tags_loc)
+          else
+            @tags_loc.sub!(/^https?:\/\//, "")
+          end
           files = nil
         end
       rescue StandardError => e
         raise InvalidTagsFile, "Error reading configured tags locatio (#{e})"
       end
+
       @min_matches = config[:min_matches] || 2
       @post_extension = config[:post_extension] || "md"
       @post_extension.sub!(/^\./, "")

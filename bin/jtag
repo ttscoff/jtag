@@ -797,8 +797,11 @@ end
 ## @return [void]
 ##
 def update_deprecated_config
+  @util = JekyllTag::Util.new
   if File.exist?(File.expand_path("~/.jtag"))
-    FileUtils.mv(File.expand_path("~/.jtag"), File.expand_path("~/.config/jtag"))
+    FileUtils.mkdir_p(File.expand_path("~/.config/jtag"))
+    FileUtils.cp_r(File.expand_path("~/.jtag"), File.expand_path("~/.config/jtag"), noop: true)
+    FileUtils.rm_rf(File.expand_path("~/.jtag"))
     @util.console_log "Moved ~/.jtag to ~/.config/jtag", level: :info, err: true, log: false
   end
 end
@@ -862,6 +865,7 @@ post do |global, command, options, args|
 end
 
 on_error do |exception|
+  @util = JekyllTag::Util.new
   if exception.is_a?(NoValidFile) || exception.is_a?(FileNotFound) || exception.is_a?(NoTagsFound)
     @util.console_log "#{@jt.color(:red)}#{exception.message}", err: true, level: :error
     return false
