@@ -18,17 +18,16 @@ CUKE_RESULTS = 'results.html'
 CLEAN << CUKE_RESULTS
 desc 'Run features'
 Cucumber::Rake::Task.new(:features) do |t|
-  opts = "features --format html -o #{CUKE_RESULTS} --format progress -x"
-  opts += " --tags #{ENV['TAGS']}" if ENV['TAGS']
-  t.cucumber_opts =  opts
+  opts = ["features", "--format", "html", "-o", CUKE_RESULTS, "--format", "progress", "-x"]
+  opts += ["--tags", ENV['TAGS']] if ENV['TAGS']
+  t.cucumber_opts = opts
   t.fork = false
 end
 
 desc 'Run features tagged as work-in-progress (@wip)'
 Cucumber::Rake::Task.new('features:wip') do |t|
-  tag_opts = ' --tags ~@pending'
-  tag_opts = ' --tags @wip'
-  t.cucumber_opts = "features --format html -o #{CUKE_RESULTS} --format pretty -x -s#{tag_opts}"
+  tag_opts = '--tags @wip'
+  t.cucumber_opts = ["features", "--format", "html", "-o", CUKE_RESULTS, "--format", "pretty", "-x", "-s", tag_opts]
   t.fork = false
 end
 
@@ -62,16 +61,23 @@ task :ver do |t|
 end
 
 desc 'Bump incremental version number'
-task :bump, :type do |t, args|
-  args.with_defaults(:type => "inc")
+task :bump, :type, :verbose do |t, args|
+  args.with_defaults(:type => "inc", :verbose => false)
   version_file = "lib/#{spec.name}/version.rb"
   raise "File not found" unless File.exist? version_file
   content = IO.read(version_file)
-  content.sub!(/VERSION = '(\d+)\.(\d+)\.(\d+)(\.\S+)?'/) {|m|
-    major = $1.to_i
-    minor = $2.to_i
-    inc = $3.to_i
-    pre = $4
+
+  content.sub!(/VERSION = (?<quot>["'])(?<major>\d+)\.(?<minor>\d+)\.(?<inc>\d+)(?<pre>\S+)?\k<quot>/) {
+    m = Regexp.last_match
+    major = m['major'].to_i
+    minor = m['minor'].to_i
+    inc = m['inc'].to_i
+    pre = m['pre']
+
+    if args[:verbose]
+      pp m
+      pp [major, minor, inc, pre]
+    end
 
     case args[:type]
     when /^maj/
@@ -81,8 +87,10 @@ task :bump, :type do |t, args|
     when /^min/
       minor += 1
       inc = 0
-    else
+    when /^[ibp]/
       inc += 1
+    else
+      raise "Invalid bump type"
     end
 
     $stdout.puts "At version #{major}.#{minor}.#{inc}#{pre}"
