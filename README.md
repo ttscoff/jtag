@@ -11,7 +11,7 @@ Configuration includes a persistent blacklist and synonym definitions. Tags manu
 If you're not already using git to manage your blog (i.e. not deploying via git), just add the non-public parts of the directory (the source files) to a repo and make a commit when you finish post. A local repo would be fine in most cases, but a remote repo offers a little extra peace of mind. Mine is set up so that a gen_deploy Rake task automatically creates a snapshot every time I publish, in addition to my own commits.
 
 
-The jTag tool is at 0.1.6 at the time of this writing. It's been tested, but never used by anyone but me until today. I'll be adding features and updating as I go, so please [let me know about bugs][support]. 
+The jTag tool is at 0.1.6 at the time of this writing. It's been tested, but never used by anyone but me until today. I'll be adding features and updating as I go, so please [let me know about bugs][support].
 
 First, though, let's cover the plugin side, which hasn't needed to change since I first wrote it. Set it up and forget it.
 
@@ -53,32 +53,32 @@ jTag is currently at version 0.1.6 It will be a work in progress for a while as 
 
 The gem is hosted on [rubygems.org](https://rubygems.org/gems/jtag). To install, either add the jtag dependency to your Gemfile in your Jekyll folder (`gem "jtag", "~> 0.1.6"`) and run `bundle`, or run `gem install jtag`. If you're not using a ruby version manager, you may need to use `sudo gem install jtag` to install it in your system Ruby configuration.
 
-Run `jtag config` to ensure it's loaded and create the configuration folder and files in `~/.jtag`.
+Run `jtag config` to ensure it's loaded and create the configuration folder and files in `~/.config/jtag`.
 
-The only configuration option required is the location (url without protocol) of your `tags.json` file. It's set in `~/.jtag/config.yml`:
+The only configuration option required is the location (url without protocol) of your `tags.json` file. It's set in `~/.config/jtag/config.yml`:
 
     tags_location: brettterpstra.com/data/tags.json
 
-There are three other files that are generated in `~/.jtag/`, and they can be edited as needed:
+There are three other files that are generated in `~/.config/jtag/`, and they can be edited as needed:
 
 - **blacklist.txt**
 
     This is a blacklist. Tags in this list will never show up in automatic results. If it already exists in the post it's merged in, but it won't be created. There are some tags that are relatively generic in terminology and would be triggered on almost every post. They're usually tags that I'd enter myself anyway. For example, I have a tag for Gabe Weatherhead's show, [Generational]([70decibels]): "generational." Because jTag stems the word before scanning for it, anything based off the root "generi" will trigger that tag. Thus, it's blacklisted and added manually on the infrequent occasions that I'm on the show.
 
-    The easiest way to add a tag to the blacklist is to run `jtag blacklist TAGNAME`. You can blacklist multiple tags at once, just separate them with a space. The blacklist is stored in `~/.jtag/blacklist.txt` and can be edited manually if needed.
+    The easiest way to add a tag to the blacklist is to run `jtag blacklist TAGNAME`. You can blacklist multiple tags at once, just separate them with a space. The blacklist is stored in `~/.config/jtag/blacklist.txt` and can be edited manually if needed.
 - **stopwords.txt**
 
-    This is a predefined list of common words that will most likely never be tags. They're "stemmed" down to their root, so that "thing," "things," and "thingy" are all blocked by one line. If you find your results are missing a particular tag, scan the `~/.jtag/stopwords.txt` file for the culprit.
+    This is a predefined list of common words that will most likely never be tags. They're "stemmed" down to their root, so that "thing," "things," and "thingy" are all blocked by one line. If you find your results are missing a particular tag, scan the `~/.config/jtag/stopwords.txt` file for the culprit.
 - **synonyms.yml**
 
     The `synonyms.yml` file is a YAML file that defines alternate spellings, punctuations or related topics which determine when a tag is used. For example, my tag for Mountain Lion is "mountainlion" because I like single-word, lowercase tags. That isn't going to be found in the text of my posts, though, so I add synonyms like this:
 
-    
+
         mountainlion:
         - Mountain Lion
         - 10.8
         - OS X 10.8
-    
+
 
     You can add as many as you like. When an attached term is found in the text, it will include the parent tag.
 
@@ -97,10 +97,10 @@ jTag is built using subcommands, each with it's own options and parameters. You 
     add       - Add tags to post(s)
     remove    - Remove tags from post(s)
     merge     - Merge multiple tags into one
-    
+
     config    - Update and notify user of configuration files location
     blacklist - Blacklist a specific tag
-    
+
     search      - List all tags, optionally filter for keywords/regular expressions (boolean OR search)
     sort      - Sort the existing tags for posts
     tag       - Generate a list of recommended tags, optionally updating the file
@@ -126,7 +126,7 @@ Use the global `-t` option with jTag to run it in "test" mode. No files will be 
 : You can use **merge** to prune your taxonomy. Have two tags that only differ by capitalization or pluralization? Run something like `jtag merge Markdown markdown _posts/*.md` and all instances of "Markdown" will be converted to "markdown," avoiding duplicates should they arise. You can merge as many tags as you want, the last one in the list will be the one that replaces them all.
 
 `search`
-: Use **search** to list all of the tags on your blog, optionally filtering the list with a keyword as the argument. Multiple keywords will be combined in an boolean OR fashion, so any tags that match any of the keywords will be returned. Keywords can also be quoted regular expressions (e.g. "^mark" to find only tags that _start_ with "mark"). 
+: Use **search** to list all of the tags on your blog, optionally filtering the list with a keyword as the argument. Multiple keywords will be combined in an boolean OR fashion, so any tags that match any of the keywords will be returned. Keywords can also be quoted regular expressions (e.g. "^mark" to find only tags that _start_ with "mark").
 
 Add the **-c** option to get tags back with a number representing how many posts they appear in. This command is a tool to help you find the proper punctuation, capitalization and pluralization of existing tags to ensure consistency.
 

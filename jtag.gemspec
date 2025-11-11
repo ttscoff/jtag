@@ -32,4 +32,5 @@ spec = Gem::Specification.new do |s|
   s.add_runtime_dependency("gli", "~> 2.20.0")
   s.add_runtime_dependency("plist")
   s.add_runtime_dependency("csv")
+  s.add_runtime_dependency("ostruct")
 end

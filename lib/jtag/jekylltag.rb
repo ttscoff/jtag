@@ -15,12 +15,12 @@ class JTag
     @min_matches = config['min_matches'] || 2
     @tags_key = config['tags_key'] || 'tags'
 
-    if config.has_key? 'default_post_location'
-      @default_post_location = File.expand_path(config['default_post_location']) || false
+    if config.has_key?('default_post_location') && config['default_post_location']
+      @default_post_location = File.expand_path(config['default_post_location'])
     else
       console_log "#{color('yellow')}No #{color('boldyellow')}default_post_location#{color('yellow')} set.", :err => true
       console_log "If you commonly work on the same posts you can add the path and *.ext", :err => true
-      console_log "to this key in ~/.jtag/config.yml. Then, if you don't specify files", :err => true
+      console_log "to this key in ~/.config/jtag/config.yml. Then, if you don't specify files", :err => true
       console_log "to act on in a command, it will fall back to those. Nice!#{color('default')}", :err => true
       @default_post_location = false
     end

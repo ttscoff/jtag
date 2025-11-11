@@ -11,7 +11,7 @@ program_desc "Autotagging for Jekyll"
 version Jtag::VERSION
 
 @config_files = %w{blacklist.txt config.yml stopwords.txt synonyms.yml}
-@config_target = File.expand_path("~/.jtag")
+@config_target = File.expand_path("~/.config/jtag")
 @piped_content = nil
 
 def config_files_complete?
@@ -64,6 +64,23 @@ def console_log(msg = "", options = {})
     $stdout.puts msg
   else
     warn msg
+  end
+end
+
+def migrate_old_config
+  old_config = File.expand_path("~/.jtag")
+  new_config = File.expand_path("~/.config/jtag")
+
+  if File.directory?(old_config) && !File.directory?(new_config)
+    # Create parent directory if needed
+    FileUtils.mkdir_p(File.dirname(new_config))
+
+    # Move the directory
+    FileUtils.mv(old_config, new_config)
+
+    # ANSI color codes: yellow=\033[0;33m, boldyellow=\033[1;33m, default=\033[0;39m
+    console_log "\033[0;33mConfiguration directory has been moved from \033[1;33m~/.jtag\033[0;33m to \033[1;33m~/.config/jtag\033[0;33m.\033[0;39m", :err => true
+    console_log "\033[0;33mYour existing configuration and files have been preserved.\033[0;39m", :err => true
   end
 end
 
@@ -719,16 +736,19 @@ pre do |global, command, options, args|
 
   @log = Logger.new(@logfile, shift_age = 7, shift_size = 1048576)
 
+  # Check for old config directory and migrate if needed
+  migrate_old_config
+
   unless config_files_complete?
     write_config
     console_log "Missing config files written to #{@config_target}. Please check your configuration.", { :err => true }
     return false
   end
 
-  configfile = File.expand_path("~/.jtag/config.yml")
+  configfile = File.expand_path("~/.config/jtag/config.yml")
 
   global[:config] = YAML::load(File.open(configfile, "r"))
-  global[:support] = File.expand_path("~/.jtag")
+  global[:support] = File.expand_path("~/.config/jtag")
 
   @piped_content = $stdin.read if $stdin.fcntl(Fcntl::F_GETFL, 0) == 0 || $stdin.stat.pipe?
 
