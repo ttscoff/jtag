@@ -6,3 +6,6 @@ html
 Gemfile.lock
 .DS_Store
 *~
+.cursor
+.github
+buildnotes.md
