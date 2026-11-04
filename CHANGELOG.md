@@ -1,3 +1,11 @@
+### 0.1.25
+
+2026-11-04 10:03
+
+#### FIXED
+
+- Errors updating deprecated config location
+
 ### 0.1.19
 
 2024-09-16 13:15
