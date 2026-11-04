@@ -11,13 +11,17 @@ module JekyllTag
       config = config.symbolize_keys
       @support = support_dir
       @util = JekyllTag::Util.new
+      @min_matches = config[:min_matches] || 2
+      @post_extension = (config[:post_extension] || "md").to_s.sub(/^\./, "")
+      @tags_key = config[:tags_key] || "tags"
+      @default_post_location = normalize_post_location(config[:default_post_location], config[:post_extension])
       begin
         if options[:files]
           @tags_loc = :auto
           files = options[:files].map(&:File.expand_path)
         elsif config[:tags_location].to_s =~ /^(auto|posts?)$/
           @tags_loc = :auto
-          files = Dir.glob(File.expand_path(File.join(config[:default_post_location], "**", "*.#{config[:post_extension]}")))
+          files = Dir.glob(File.join(@default_post_location.to_s, "**", "*.#{@post_extension}"))
         else
           @tags_loc = config[:tags_location]
           if File.exist?(File.expand_path(@tags_loc))
@@ -31,14 +35,7 @@ module JekyllTag
         raise InvalidTagsFile, "Error reading configured tags locatio (#{e})"
       end
 
-      @min_matches = config[:min_matches] || 2
-      @post_extension = config[:post_extension] || "md"
-      @post_extension.sub!(/^\./, "")
-      @tags_key = config[:tags_key] || "tags"
-
-      if config.has_key? :default_post_location
-        @default_post_location = File.expand_path(config[:default_post_location]) || false
-      else
+      unless config.has_key?(:default_post_location)
         str = ["#{color("yellow")}No #{color("boldyellow")}default_post_location#{color("yellow")} set.",
                "If you commonly work on the same posts you can add the path and extension",
                "to these key in ~/.jtag/config.yml. Then, if you don't specify files",
@@ -57,6 +54,24 @@ module JekyllTag
       synonyms.each { |k, v|
         @tags[k.to_s.downcase] = v unless @blacklist.include?(k.to_s.downcase)
       }
+    end
+
+    # Older configs stored a glob (…/_posts/*.md). Commands expect a directory
+    # plus post_extension, so peel the glob off and keep the extension.
+    def normalize_post_location(location, explicit_extension)
+      return false if location.nil? || location.to_s.strip.empty?
+
+      raw = location.to_s.strip
+      if raw.match?(/[*?\[{]/)
+        unless explicit_extension
+          ext = raw[/\*\.([A-Za-z0-9]+)\z/, 1]
+          @post_extension = ext if ext
+        end
+        dir = File.expand_path(File.dirname(raw))
+        return File.directory?(dir) ? dir : false
+      end
+
+      File.expand_path(raw)
     end
 
     def tags(options = {})
@@ -145,7 +160,15 @@ module JekyllTag
       begin
         input = piped ? file.strip : IO.read(File.expand_path(file))
         yaml = YAML::load(input)
-        return yaml[@tags_key] || []
+        tags = yaml.is_a?(Hash) ? yaml[@tags_key] : nil
+        case tags
+        when Array
+          tags.compact.map(&:to_s)
+        when String
+          [tags]
+        else
+          []
+        end
       rescue
         return []
       end

@@ -22,7 +22,7 @@ module JekyllTag
     end
 
     ##
-    ## Convert a string to a format symbol (:csv, :complete, :json, :plist, :yaml)
+    ## Convert a string to a format symbol (:list, :csv, :complete, :json, :plist, :yaml)
     ##
     ## @return [Symbol] format symbol
     ##
@@ -38,6 +38,8 @@ module JekyllTag
         :csv
       when /^c/i
         :complete
+      when /^l/i
+        :list
       else
         raise ArgumentError, "Invalid format string: #{self}"
       end

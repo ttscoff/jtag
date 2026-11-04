@@ -17,6 +17,11 @@ module JekyllTag
 
     CONFIG_FILES = %w{blacklist.txt config.yml stopwords.txt synonyms.yml}
 
+    def initialize
+      @debug_level = 3
+      @silent = false
+    end
+
     ##
     ## Output tags in the specified format
     ##
@@ -33,7 +38,8 @@ module JekyllTag
     ##
     def output_tags(tags, options)
       # Determine the format for output, defaulting to "yaml" if not specified
-      format = options[:format]&.to_format || :yaml
+      format = options[:format].respond_to?(:to_format) ? options[:format].to_format : (options[:format] || :yaml)
+      format = format.to_sym
       # Determine if tags should be printed with a null delimiter
       print0 = options[:print0] || false
       # Determine the filename for output, if specified
@@ -45,7 +51,7 @@ module JekyllTag
       tags.uniq!
 
       case format
-      when "complete"
+      when :complete
         if filename || content
           content = filename ? IO.read(File.expand_path(filename)) : content
           parts = content.split(/---\s*\n/)
@@ -64,19 +70,19 @@ module JekyllTag
         else
           console_log tags.join("\n"), level: :error, err: false
         end
-      when "list"
+      when :list
         # Join tags with a null character delimiter
         console_log tags.map(&:strip).join(print0 ? "\x00" : "\n"), level: :error, err: false, file: filename
-      when "csv"
+      when :csv
         # Log the tags in CSV format
         console_log tags.to_csv
-      when "json"
+      when :json
         # Create a hash with tags and optional filename, then log as JSON
         out = {}
         out["tags"] = tags
         out["path"] = filename if filename
         console_log out.to_json
-      when "plist"
+      when :plist
         # Create a hash with optional filename, then log as plist
         out = {}
         out["path"] = filename if filename
@@ -139,7 +145,8 @@ module JekyllTag
       err = options[:err] || false
       options[:log] ||= false
 
-      return unless DEBUG_LEVELS[level.to_sym] < @debug_level
+      threshold = @debug_level || 0
+      return unless DEBUG_LEVELS.fetch(level.to_sym, 0) < threshold
 
       if options[:log]
         if err

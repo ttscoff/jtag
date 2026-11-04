@@ -865,9 +865,10 @@ post do |global, command, options, args|
 end
 
 on_error do |exception|
-  @util = JekyllTag::Util.new
+  @util ||= JekyllTag::Util.new
   if exception.is_a?(NoValidFile) || exception.is_a?(FileNotFound) || exception.is_a?(NoTagsFound)
-    @util.console_log "#{@jt.color(:red)}#{exception.message}", err: true, level: :error
+    prefix = @jt ? @jt.color(:red) : ""
+    @util.console_log "#{prefix}#{exception.message}", err: true, level: :error
     return false
   end
 
